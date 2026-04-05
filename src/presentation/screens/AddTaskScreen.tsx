@@ -24,6 +24,11 @@ import {
 } from "react-native-safe-area-context";
 
 import { screenHeaderPaddingTop } from "../layout/screenHeaderPaddingTop";
+import {
+  addDays,
+  localISODate,
+  parseBRDateToISO,
+} from "../utils/agendaDates";
 import { accentBlue, brandNavy, highContrastActionBlue } from "../theme/themePalette";
 import { useFontScaleMultiplier } from "../theme/FontScaleContext";
 import { useAppTheme } from "../theme/ThemeContext";
@@ -47,8 +52,16 @@ type FlowPhase = "wizard" | "success";
 type Props = {
   visible: boolean;
   onClose: () => void;
-  onCreate: (title: string, subtitle: string) => void;
+  onCreate: (title: string, subtitle: string, scheduleDate: string) => void;
 };
+
+function computeScheduleDate(mode: DayMode, customDate: string): string {
+  const now = new Date();
+  if (mode === "today") return localISODate(now);
+  if (mode === "tomorrow") return localISODate(addDays(now, 1));
+  const parsed = parseBRDateToISO(customDate.trim(), now.getFullYear());
+  return parsed ?? localISODate(now);
+}
 
 function formatSubtitle(
   mode: DayMode,
@@ -204,7 +217,8 @@ export function AddTaskScreen({
       return;
     }
     const sub = formatSubtitle(dayMode, customDate, timeText, remindOn);
-    onCreate(t, sub);
+    const scheduleDate = computeScheduleDate(dayMode, customDate);
+    onCreate(t, sub, scheduleDate);
     setFlowPhase("success");
   }, [customDate, dayMode, onCreate, remindOn, timeText, title]);
 

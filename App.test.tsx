@@ -107,6 +107,17 @@ describe("App", () => {
       );
     });
 
+    it("toque em Agenda abre a lista da agenda", async () => {
+      const screen = render(<App />);
+      fireEvent.press(await screen.findByText("Próximo"));
+      fireEvent.press(await screen.findByText("Próximo"));
+      await completeLoginFromWelcome(screen);
+      fireEvent.press(await screen.findByLabelText("Agenda"));
+      expect(await screen.findByTestId("agenda-screen")).toBeTruthy();
+      fireEvent.press(await screen.findByLabelText("Início"));
+      expect(await screen.findByTestId("home-screen")).toBeTruthy();
+    });
+
     it("adicionar tarefa inclui novo item na lista", async () => {
       const screen = render(<App />);
       fireEvent.press(await screen.findByText("Próximo"));
