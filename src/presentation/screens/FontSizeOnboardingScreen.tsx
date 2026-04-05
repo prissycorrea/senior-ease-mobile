@@ -9,10 +9,8 @@ import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useMemo, useState, type ReactElement } from "react";
 import {
   ActivityIndicator,
-  Platform,
   Pressable,
   ScrollView,
-  StatusBar as RNStatusBar,
   StyleSheet,
   Text,
   View,
@@ -29,6 +27,7 @@ import {
   FONT_SCALE_MIN,
   FONT_SCALE_STEP,
 } from "../../domain/entities/fontScale";
+import { screenHeaderPaddingTop } from "../layout/screenHeaderPaddingTop";
 import {
   accentBlue,
   brandNavy,
@@ -47,25 +46,6 @@ const ADJUST_LABEL_BASE = 16;
 const NEXT_LABEL_BASE = 17;
 const ADJUST_ICON_BASE = 22;
 const ADJUST_CIRCLE_BASE = 32;
-
-const PROGRESS_EXTRA_BELOW_TOP_ANDROID = 42;
-const PROGRESS_EXTRA_BELOW_TOP_IOS = 16;
-const ANDROID_PROGRESS_TOP_MIN_TOTAL = 72;
-
-function progressTopPadding(insetsTop: number): number {
-  const androidStatusBar =
-    Platform.OS === "android" ? (RNStatusBar.currentHeight ?? 28) : 0;
-  const chromeTop = Math.max(insetsTop, androidStatusBar);
-  const extra =
-    Platform.OS === "android"
-      ? PROGRESS_EXTRA_BELOW_TOP_ANDROID
-      : PROGRESS_EXTRA_BELOW_TOP_IOS;
-  const total = chromeTop + extra;
-  if (Platform.OS === "android") {
-    return Math.max(total, ANDROID_PROGRESS_TOP_MIN_TOTAL);
-  }
-  return total;
-}
 
 type Props = {
   themePreference: ThemePreference;
@@ -156,7 +136,7 @@ export function FontSizeOnboardingScreen({
     <View
       style={[styles.screenRoot, { backgroundColor: palette.background }]}
     >
-      <SafeAreaView style={styles.safeInner} edges={["left", "right"]}>
+      <SafeAreaView style={styles.safeInner} edges={["left", "right", "bottom"]}>
         <StatusBar style={isDefault ? "dark" : "light"} />
         <ScrollView
           style={styles.scrollFlex}
@@ -167,7 +147,7 @@ export function FontSizeOnboardingScreen({
           <View
             style={[
               styles.topBar,
-              { paddingTop: progressTopPadding(insets.top) },
+              { paddingTop: screenHeaderPaddingTop(insets.top) },
             ]}
           >
             <Pressable

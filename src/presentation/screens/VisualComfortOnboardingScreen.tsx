@@ -9,10 +9,8 @@ import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useState, type ReactElement } from "react";
 import {
   ActivityIndicator,
-  Platform,
   Pressable,
   ScrollView,
-  StatusBar as RNStatusBar,
   StyleSheet,
   Text,
   View,
@@ -23,6 +21,7 @@ import {
 } from "react-native-safe-area-context";
 
 import type { ThemePreference } from "../../domain/entities/ThemePreference";
+import { screenHeaderPaddingTop } from "../layout/screenHeaderPaddingTop";
 import {
   accentBlue,
   brandNavy,
@@ -39,25 +38,6 @@ const lineOnDarkCard = "#4A5F73";
 
 const LEXEND_BOLD = "Lexend_700Bold";
 const LEXEND_REGULAR = "Lexend_400Regular";
-
-const PROGRESS_EXTRA_BELOW_TOP_ANDROID = 42;
-const PROGRESS_EXTRA_BELOW_TOP_IOS = 16;
-const ANDROID_PROGRESS_TOP_MIN_TOTAL = 72;
-
-function progressTopPadding(insetsTop: number): number {
-  const androidStatusBar =
-    Platform.OS === "android" ? (RNStatusBar.currentHeight ?? 28) : 0;
-  const chromeTop = Math.max(insetsTop, androidStatusBar);
-  const extra =
-    Platform.OS === "android"
-      ? PROGRESS_EXTRA_BELOW_TOP_ANDROID
-      : PROGRESS_EXTRA_BELOW_TOP_IOS;
-  const total = chromeTop + extra;
-  if (Platform.OS === "android") {
-    return Math.max(total, ANDROID_PROGRESS_TOP_MIN_TOTAL);
-  }
-  return total;
-}
 
 function CheckBadgeOnLight(): ReactElement {
   return (
@@ -149,7 +129,7 @@ export function VisualComfortOnboardingScreen({
     <View
       style={[styles.screenRoot, { backgroundColor: palette.background }]}
     >
-      <SafeAreaView style={styles.safeInner} edges={["left", "right"]}>
+      <SafeAreaView style={styles.safeInner} edges={["left", "right", "bottom"]}>
         <StatusBar style={selected === "high_contrast" ? "light" : "dark"} />
         <ScrollView
           style={styles.scrollFlex}
@@ -160,7 +140,7 @@ export function VisualComfortOnboardingScreen({
           <View
             style={[
               styles.progressWrap,
-              { paddingTop: progressTopPadding(insets.top) },
+              { paddingTop: screenHeaderPaddingTop(insets.top) },
             ]}
           >
             <View style={styles.progressRow}>

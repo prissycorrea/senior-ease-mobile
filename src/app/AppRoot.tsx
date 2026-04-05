@@ -1,6 +1,6 @@
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useMemo, useState, type ReactElement } from "react";
-import { ActivityIndicator, StyleSheet, View } from "react-native";
+import { ActivityIndicator, Alert, StyleSheet, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { AsyncStorageSettingsRepository } from "../data/settings/AsyncStorageSettingsRepository";
@@ -8,6 +8,7 @@ import type { AppSettings } from "../domain/entities/AppSettings";
 import { clampFontScale } from "../domain/entities/fontScale";
 import type { ThemePreference } from "../domain/entities/ThemePreference";
 import { CompleteFontSizeOnboardingUseCase } from "../domain/usecases/CompleteFontSizeOnboardingUseCase";
+import { CompleteWelcomeScreenUseCase } from "../domain/usecases/CompleteWelcomeScreenUseCase";
 import { GetBootstrapStateUseCase } from "../domain/usecases/GetBootstrapStateUseCase";
 import { RevertToFontSizeOnboardingUseCase } from "../domain/usecases/RevertToFontSizeOnboardingUseCase";
 import { RevertToVisualComfortOnboardingUseCase } from "../domain/usecases/RevertToVisualComfortOnboardingUseCase";
@@ -15,6 +16,7 @@ import { SubmitVisualComfortOnboardingUseCase } from "../domain/usecases/SubmitV
 import { FontSizeOnboardingScreen } from "../presentation/screens/FontSizeOnboardingScreen";
 import { MainAppScreen } from "../presentation/screens/MainAppScreen";
 import { VisualComfortOnboardingScreen } from "../presentation/screens/VisualComfortOnboardingScreen";
+import { WelcomeScreen } from "../presentation/screens/WelcomeScreen";
 import { FontScaleProvider } from "../presentation/theme/FontScaleContext";
 import { ThemeProvider } from "../presentation/theme/ThemeContext";
 import { brandNavy } from "../presentation/theme/themePalette";
@@ -22,6 +24,7 @@ import { brandNavy } from "../presentation/theme/themePalette";
 export function AppRoot(): ReactElement {
   const {
     getBootstrap,
+    completeWelcomeStep,
     submitVisualStep,
     completeFontStep,
     revertToVisualStep,
@@ -30,6 +33,9 @@ export function AppRoot(): ReactElement {
     const settingsRepository = new AsyncStorageSettingsRepository();
     return {
       getBootstrap: new GetBootstrapStateUseCase(settingsRepository),
+      completeWelcomeStep: new CompleteWelcomeScreenUseCase(
+        settingsRepository,
+      ),
       submitVisualStep: new SubmitVisualComfortOnboardingUseCase(
         settingsRepository,
       ),
@@ -70,6 +76,18 @@ export function AppRoot(): ReactElement {
     );
   }
 
+  const handleWelcomeComplete = async () => {
+    await completeWelcomeStep.execute();
+    setSettings((prev) =>
+      prev
+        ? {
+            ...prev,
+            welcomeScreenCompleted: true,
+          }
+        : prev,
+    );
+  };
+
   const handleVisualStepComplete = async (theme: ThemePreference) => {
     await submitVisualStep.execute(theme);
     setSettings((prev) =>
@@ -109,7 +127,8 @@ export function AppRoot(): ReactElement {
     );
   };
 
-  const handleMainScreenBack = async () => {
+  /** Volta ao passo de tamanho da letra (tela inicial pós-onboarding e app principal). */
+  const handleBackToFontSizeStep = async () => {
     await revertToFontStep.execute();
     setSettings((prev) =>
       prev
@@ -140,7 +159,21 @@ export function AppRoot(): ReactElement {
         />
       );
     }
-    return <MainAppScreen onBack={handleMainScreenBack} />;
+    if (!settings.welcomeScreenCompleted) {
+      return (
+        <WelcomeScreen
+          onContinue={handleWelcomeComplete}
+          onBack={handleBackToFontSizeStep}
+          onHelpPress={() => {
+            Alert.alert(
+              "Preciso de ajuda",
+              "Em breve você poderá falar com o suporte por aqui.",
+            );
+          }}
+        />
+      );
+    }
+    return <MainAppScreen onBack={handleBackToFontSizeStep} />;
   })();
 
   return (

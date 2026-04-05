@@ -12,6 +12,15 @@ jest.mock("expo-system-ui", () => ({
   setBackgroundColorAsync: jest.fn(() => Promise.resolve()),
 }));
 
+jest.mock("expo-blur", () => {
+  const React = require("react");
+  const { View } = require("react-native");
+  return {
+    BlurView: ({ children, ...rest }) =>
+      React.createElement(View, rest, children),
+  };
+});
+
 jest.mock("@expo-google-fonts/lexend", () => ({
   useFonts: () => [true],
   Lexend_400Regular: 1,

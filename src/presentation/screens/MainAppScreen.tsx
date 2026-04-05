@@ -3,8 +3,12 @@ import * as SystemUI from "expo-system-ui";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 
+import { screenHeaderPaddingTop } from "../layout/screenHeaderPaddingTop";
 import { useFontScaleMultiplier } from "../theme/FontScaleContext";
 import { useAppTheme } from "../theme/ThemeContext";
 import { brandNavy } from "../theme/themePalette";
@@ -18,6 +22,7 @@ type Props = {
 };
 
 export function MainAppScreen({ onBack }: Props) {
+  const insets = useSafeAreaInsets();
   const { preference, palette } = useAppTheme();
   const fontScale = useFontScaleMultiplier();
   const [backing, setBacking] = useState(false);
@@ -42,8 +47,13 @@ export function MainAppScreen({ onBack }: Props) {
 
   return (
     <View style={[styles.container, { backgroundColor: palette.background }]}>
-      <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
-        <View style={styles.topBar}>
+      <SafeAreaView style={styles.safe} edges={["left", "right", "bottom"]}>
+        <View
+          style={[
+            styles.topBar,
+            { paddingTop: screenHeaderPaddingTop(insets.top) },
+          ]}
+        >
           <Pressable
             onPress={handleBack}
             disabled={backing}

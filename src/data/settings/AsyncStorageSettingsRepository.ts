@@ -14,6 +14,7 @@ import { SETTINGS_STORAGE_KEY } from "./storageKeys";
 
 type StoredSettings = {
   themePreference?: ThemePreference;
+  welcomeScreenCompleted?: boolean;
   visualOnboardingCompleted?: boolean;
   fontSizeOnboardingCompleted?: boolean;
   fontScaleMultiplier?: number;
@@ -30,6 +31,10 @@ function parseStored(json: string | null): AppSettings {
     if (visualDone && parsed.fontSizeOnboardingCompleted === undefined) {
       fontStepDone = true;
     }
+    const welcomeDone =
+      parsed.welcomeScreenCompleted !== undefined
+        ? Boolean(parsed.welcomeScreenCompleted)
+        : visualDone && fontStepDone;
     const rawScale =
       typeof parsed.fontScaleMultiplier === "number"
         ? parsed.fontScaleMultiplier
@@ -39,6 +44,7 @@ function parseStored(json: string | null): AppSettings {
         parsed.themePreference === "high_contrast"
           ? "high_contrast"
           : "default",
+      welcomeScreenCompleted: welcomeDone,
       visualOnboardingCompleted: visualDone,
       fontSizeOnboardingCompleted: fontStepDone,
       fontScaleMultiplier: clampFontScale(rawScale),
