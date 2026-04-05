@@ -30,7 +30,9 @@ import {
 import { useFontScaleMultiplier } from "../theme/FontScaleContext";
 import { useAppTheme } from "../theme/ThemeContext";
 import type { HomeActivity } from "../types/homeActivity";
+import { addDays, localISODate } from "../utils/agendaDates";
 import { AddTaskScreen } from "./AddTaskScreen";
+import { AgendaScreen } from "./AgendaScreen";
 import { TaskDetailScreen } from "./TaskDetailScreen";
 
 const LEXEND_BOLD = "Lexend_700Bold";
@@ -47,32 +49,41 @@ type Props = {
   onBack: () => Promise<void>;
 };
 
-const INITIAL_ACTIVITIES: HomeActivity[] = [
-  {
-    id: "1",
-    title: "Tomar remédio",
-    subtitle: "Hoje — 09:00h",
-    done: true,
-  },
-  {
-    id: "2",
-    title: "Caminhar no parque",
-    subtitle: "Hoje — 10:00h",
-    done: false,
-  },
-  {
-    id: "3",
-    title: "Almoço com a família",
-    subtitle: "Hoje — 12:00h",
-    done: false,
-  },
-  {
-    id: "4",
-    title: "Leitura de estudo",
-    subtitle: "Amanhã — 16:00h",
-    done: false,
-  },
-];
+function createSeedActivities(): HomeActivity[] {
+  const now = new Date();
+  const todayKey = localISODate(now);
+  const tomorrowKey = localISODate(addDays(now, 1));
+  return [
+    {
+      id: "1",
+      title: "Tomar remédio",
+      subtitle: "Hoje — 09:00h",
+      done: true,
+      scheduleDate: todayKey,
+    },
+    {
+      id: "2",
+      title: "Caminhar no parque",
+      subtitle: "Hoje — 10:00h",
+      done: false,
+      scheduleDate: todayKey,
+    },
+    {
+      id: "3",
+      title: "Almoço com a família",
+      subtitle: "Hoje — 12:00h",
+      done: false,
+      scheduleDate: todayKey,
+    },
+    {
+      id: "4",
+      title: "Leitura de estudo",
+      subtitle: "Amanhã — 16:00h",
+      done: false,
+      scheduleDate: tomorrowKey,
+    },
+  ];
+}
 
 function DailyProgressRing({
   size,
@@ -154,10 +165,10 @@ export function MainAppScreen({ userDisplayName, onBack }: Props): ReactElement 
   const fontBold = fontsLoaded ? LEXEND_BOLD : undefined;
   const fontRegular = fontsLoaded ? LEXEND_REGULAR : undefined;
   const [backing, setBacking] = useState(false);
-  const [activities, setActivities] =
-    useState<HomeActivity[]>(INITIAL_ACTIVITIES);
+  const [activities, setActivities] = useState<HomeActivity[]>(createSeedActivities);
   const [detailTaskId, setDetailTaskId] = useState<string | null>(null);
   const [addTaskVisible, setAddTaskVisible] = useState(false);
+  const [mainTab, setMainTab] = useState<"home" | "agenda">("home");
 
   const isDefault = preference === "default";
   const displayName =
@@ -235,18 +246,25 @@ export function MainAppScreen({ userDisplayName, onBack }: Props): ReactElement 
     setAddTaskVisible(false);
   }, []);
 
-  const handleCreateTask = useCallback((title: string, subtitle: string) => {
-    const sub =
-      subtitle.trim().length > 0 ? subtitle.trim() : "Sem horário definido";
-    const id = `task-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-    setActivities((prev) => [
-      ...prev,
-      { id, title, subtitle: sub, done: false },
-    ]);
-  }, []);
+  const handleCreateTask = useCallback(
+    (title: string, subtitle: string, scheduleDate: string) => {
+      const sub =
+        subtitle.trim().length > 0 ? subtitle.trim() : "Sem horário definido";
+      const id = `task-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+      setActivities((prev) => [
+        ...prev,
+        { id, title, subtitle: sub, done: false, scheduleDate },
+      ]);
+    },
+    [],
+  );
 
   const handleAgenda = useCallback(() => {
-    Alert.alert("Agenda", "Em breve sua agenda completa estará aqui.");
+    setMainTab("agenda");
+  }, []);
+
+  const handleOpenHomeTab = useCallback(() => {
+    setMainTab("home");
   }, []);
 
   const handleActivityPress = useCallback((id: string) => {
@@ -279,10 +297,12 @@ export function MainAppScreen({ userDisplayName, onBack }: Props): ReactElement 
 
   return (
     <View
-      testID="home-screen"
+      testID={mainTab === "home" ? "home-screen" : "agenda-screen"}
       style={[styles.root, { backgroundColor: palette.background }]}
     >
       <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
+        {mainTab === "home" ? (
+          <>
         <View
           style={[
             styles.headerRow,
@@ -535,6 +555,15 @@ export function MainAppScreen({ userDisplayName, onBack }: Props): ReactElement 
             ))}
           </View>
         </ScrollView>
+          </>
+        ) : (
+          <AgendaScreen
+            userDisplayName={displayName}
+            activities={activities}
+            onActivityPress={handleActivityPress}
+            onSettings={handleSettings}
+          />
+        )}
 
         <View
           style={[
@@ -556,19 +585,28 @@ export function MainAppScreen({ userDisplayName, onBack }: Props): ReactElement 
                 },
               ]}
             >
-              <View style={styles.navItem}>
-                <Ionicons name="home" size={24} color={ringActive} />
+              <Pressable
+                onPress={handleOpenHomeTab}
+                style={styles.navItem}
+                accessibilityRole="button"
+                accessibilityLabel="Início"
+              >
+                <Ionicons
+                  name="home"
+                  size={24}
+                  color={mainTab === "home" ? ringActive : palette.textMuted}
+                />
                 <Text
                   style={{
-                    fontFamily: fontBold,
+                    fontFamily: mainTab === "home" ? fontBold : fontRegular,
                     fontSize: bottomNavLabel,
-                    color: ringActive,
+                    color: mainTab === "home" ? ringActive : palette.textMuted,
                     marginTop: 4,
                   }}
                 >
                   Início
                 </Text>
-              </View>
+              </Pressable>
               <Pressable
                 onPress={handleAgenda}
                 style={styles.navItem}
@@ -578,13 +616,13 @@ export function MainAppScreen({ userDisplayName, onBack }: Props): ReactElement 
                 <Ionicons
                   name="calendar-outline"
                   size={24}
-                  color={palette.textMuted}
+                  color={mainTab === "agenda" ? ringActive : palette.textMuted}
                 />
                 <Text
                   style={{
-                    fontFamily: fontRegular,
+                    fontFamily: mainTab === "agenda" ? fontBold : fontRegular,
                     fontSize: bottomNavLabel,
-                    color: palette.textMuted,
+                    color: mainTab === "agenda" ? ringActive : palette.textMuted,
                     marginTop: 4,
                   }}
                 >
