@@ -21,7 +21,7 @@ async function completeLoginFromWelcome(screen: RenderAPI): Promise<void> {
     "Senha123",
   );
   fireEvent.press(await screen.findByTestId("login-password-submit"));
-  expect(await screen.findByText("Senior Ease")).toBeTruthy();
+  expect(await screen.findByTestId("home-screen")).toBeTruthy();
 }
 
 describe("App", () => {
@@ -89,12 +89,82 @@ describe("App", () => {
       );
       fireEvent.press(await screen.findByTestId("sign-up-password-next"));
 
-      expect(await screen.findByText("Senior Ease")).toBeTruthy();
-      expect(
-        await screen.findByText(
-          "O tema escolhido está ativo em todo o aplicativo.",
-        ),
-      ).toBeTruthy();
+      expect(await screen.findByTestId("home-screen")).toBeTruthy();
+      expect(await screen.findByTestId("home-user-name")).toHaveTextContent(
+        "Maria Silva",
+      );
+    });
+
+    it("na home, tocar em uma atividade abre a tela de detalhes", async () => {
+      const screen = render(<App />);
+      fireEvent.press(await screen.findByText("Próximo"));
+      fireEvent.press(await screen.findByText("Próximo"));
+      await completeLoginFromWelcome(screen);
+      fireEvent.press(await screen.findByTestId("home-activity-2"));
+      expect(await screen.findByTestId("task-detail-screen")).toBeTruthy();
+      expect(await screen.findByTestId("task-detail-title")).toHaveTextContent(
+        "Caminhar no parque",
+      );
+    });
+
+    it("adicionar tarefa inclui novo item na lista", async () => {
+      const screen = render(<App />);
+      fireEvent.press(await screen.findByText("Próximo"));
+      fireEvent.press(await screen.findByText("Próximo"));
+      await completeLoginFromWelcome(screen);
+      fireEvent.press(await screen.findByTestId("home-add-task"));
+      expect(await screen.findByTestId("add-task-screen")).toBeTruthy();
+      fireEvent.changeText(
+        await screen.findByTestId("add-task-title-input"),
+        "Nova tarefa teste",
+      );
+      fireEvent.press(await screen.findByTestId("add-task-step1-next"));
+      fireEvent.press(await screen.findByTestId("add-task-day-tomorrow"));
+      fireEvent.press(await screen.findByTestId("add-task-pick-time-row"));
+      fireEvent.changeText(
+        await screen.findByTestId("add-task-time-input"),
+        "08:00h",
+      );
+      fireEvent.press(await screen.findByTestId("add-task-submit"));
+      expect(await screen.findByText("Nova tarefa teste")).toBeTruthy();
+      expect(await screen.findByText("Amanhã — 08:00h")).toBeTruthy();
+    });
+
+    it("após cadastro, login demo exibe o nome cadastrado na home", async () => {
+      const screen = render(<App />);
+      fireEvent.press(await screen.findByText("Próximo"));
+      fireEvent.press(await screen.findByText("Próximo"));
+      expect(await screen.findByTestId("welcome-screen")).toBeTruthy();
+      fireEvent.press(await screen.findByTestId("welcome-primary-button"));
+      fireEvent.changeText(
+        await screen.findByTestId("sign-up-name-input"),
+        "Maria Silva",
+      );
+      fireEvent.press(await screen.findByTestId("sign-up-name-next"));
+      fireEvent.changeText(
+        await screen.findByTestId("sign-up-email-input"),
+        "maria@example.com",
+      );
+      fireEvent.press(await screen.findByTestId("sign-up-email-next"));
+      fireEvent.changeText(
+        await screen.findByTestId("sign-up-password-input"),
+        "senha12",
+      );
+      fireEvent.changeText(
+        await screen.findByTestId("sign-up-password-confirm-input"),
+        "senha12",
+      );
+      fireEvent.press(await screen.findByTestId("sign-up-password-next"));
+      expect(await screen.findByTestId("home-user-name")).toHaveTextContent(
+        "Maria Silva",
+      );
+
+      fireEvent.press(await screen.findByLabelText("Voltar"));
+      expect(await screen.findByTestId("welcome-screen")).toBeTruthy();
+      await completeLoginFromWelcome(screen);
+      expect(await screen.findByTestId("home-user-name")).toHaveTextContent(
+        "Maria Silva",
+      );
     });
 
     it("permite escolher alto contraste e concluir até a tela principal", async () => {
@@ -155,6 +225,9 @@ describe("App", () => {
       fireEvent.press(await screen.findByText("Próximo"));
       fireEvent.press(await screen.findByText("Próximo"));
       await completeLoginFromWelcome(screen);
+      expect(await screen.findByTestId("home-user-name")).toHaveTextContent(
+        "Ricardo Almeida",
+      );
 
       fireEvent.press(await screen.findByLabelText("Voltar"));
 

@@ -25,6 +25,8 @@ type StoredSettings = {
   registrationDraftEmail?: string;
   loginStep?: number;
   loginDraftEmail?: string;
+  userDisplayName?: string;
+  lastRegisteredDisplayName?: string;
 };
 
 function clampRegistrationStep(n: number | undefined): RegistrationStep {
@@ -68,6 +70,14 @@ function parseStored(json: string | null): AppSettings {
       typeof parsed.loginDraftEmail === "string"
         ? parsed.loginDraftEmail
         : "";
+    const displayName =
+      typeof parsed.userDisplayName === "string"
+        ? parsed.userDisplayName
+        : "";
+    const lastRegistered =
+      typeof parsed.lastRegisteredDisplayName === "string"
+        ? parsed.lastRegisteredDisplayName
+        : "";
     return {
       themePreference:
         parsed.themePreference === "high_contrast"
@@ -82,6 +92,8 @@ function parseStored(json: string | null): AppSettings {
       registrationDraftEmail: draftEmail,
       loginStep: clampLoginStep(parsed.loginStep),
       loginDraftEmail: loginMail,
+      userDisplayName: displayName,
+      lastRegisteredDisplayName: lastRegistered,
     };
   } catch {
     return { ...defaultAppSettings };

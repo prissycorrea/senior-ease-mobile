@@ -7,6 +7,8 @@ import { AsyncStorageSettingsRepository } from "../data/settings/AsyncStorageSet
 import {
   DEMO_LOGIN_EMAIL,
   DEMO_LOGIN_PASSWORD,
+  DEMO_USER_DISPLAY_NAME,
+  demoLoginHelpMessage,
   isDemoLoginValid,
 } from "../domain/constants/demoLoginCredentials";
 import type { AppSettings } from "../domain/entities/AppSettings";
@@ -92,6 +94,7 @@ export function AppRoot(): ReactElement {
       registrationStep: 1,
       loginStep: 0,
       loginDraftEmail: "",
+      userDisplayName: "",
     });
     setSettings((prev) =>
       prev
@@ -100,6 +103,7 @@ export function AppRoot(): ReactElement {
             registrationStep: 1,
             loginStep: 0,
             loginDraftEmail: "",
+            userDisplayName: "",
           }
         : prev,
     );
@@ -173,10 +177,13 @@ export function AppRoot(): ReactElement {
     if (!isDemoLoginValid(email, password)) {
       Alert.alert(
         "Não foi possível entrar",
-        `E-mail ou senha incorretos.\n\nConta de teste:\n${DEMO_LOGIN_EMAIL}\nSenha: ${DEMO_LOGIN_PASSWORD}`,
+        `E-mail ou senha incorretos.\n\n${demoLoginHelpMessage()}`,
       );
       return false;
     }
+    const registered = settings.lastRegisteredDisplayName.trim();
+    const displayName =
+      registered.length >= 2 ? registered : DEMO_USER_DISPLAY_NAME;
     await persistSettings.execute({
       welcomeScreenCompleted: true,
       loginStep: 0,
@@ -184,6 +191,7 @@ export function AppRoot(): ReactElement {
       registrationStep: 0,
       registrationDraftFullName: "",
       registrationDraftEmail: "",
+      userDisplayName: displayName,
     });
     setSettings((prev) =>
       prev
@@ -195,6 +203,7 @@ export function AppRoot(): ReactElement {
             registrationStep: 0,
             registrationDraftFullName: "",
             registrationDraftEmail: "",
+            userDisplayName: displayName,
           }
         : prev,
     );
@@ -296,6 +305,8 @@ export function AppRoot(): ReactElement {
   };
 
   const handleSignUpComplete = async () => {
+    const name =
+      settings.registrationDraftFullName.trim() || "Usuário";
     await persistSettings.execute({
       welcomeScreenCompleted: true,
       registrationStep: 0,
@@ -303,6 +314,8 @@ export function AppRoot(): ReactElement {
       registrationDraftEmail: "",
       loginStep: 0,
       loginDraftEmail: "",
+      userDisplayName: name,
+      lastRegisteredDisplayName: name,
     });
     setSettings((prev) =>
       prev
@@ -314,6 +327,8 @@ export function AppRoot(): ReactElement {
             registrationDraftEmail: "",
             loginStep: 0,
             loginDraftEmail: "",
+            userDisplayName: name,
+            lastRegisteredDisplayName: name,
           }
         : prev,
     );
@@ -367,6 +382,7 @@ export function AppRoot(): ReactElement {
       registrationDraftEmail: "",
       loginStep: 0,
       loginDraftEmail: "",
+      userDisplayName: "",
     });
     setSettings((prev) =>
       prev
@@ -378,6 +394,7 @@ export function AppRoot(): ReactElement {
             registrationDraftEmail: "",
             loginStep: 0,
             loginDraftEmail: "",
+            userDisplayName: "",
           }
         : prev,
     );
@@ -396,6 +413,7 @@ export function AppRoot(): ReactElement {
             registrationDraftEmail: "",
             loginStep: 0,
             loginDraftEmail: "",
+            userDisplayName: "",
           }
         : prev,
     );
@@ -479,7 +497,12 @@ export function AppRoot(): ReactElement {
         />
       );
     }
-    return <MainAppScreen onBack={handleBackFromMainAppToWelcome} />;
+    return (
+      <MainAppScreen
+        userDisplayName={settings.userDisplayName}
+        onBack={handleBackFromMainAppToWelcome}
+      />
+    );
   })();
 
   return (

@@ -12,6 +12,20 @@ jest.mock("expo-system-ui", () => ({
   setBackgroundColorAsync: jest.fn(() => Promise.resolve()),
 }));
 
+jest.mock("react-native-svg", () => {
+  const React = require("react");
+  const { View } = require("react-native");
+  const Passthrough = ({ children, ...rest }) =>
+    React.createElement(View, rest, children);
+  return {
+    __esModule: true,
+    default: Passthrough,
+    Svg: Passthrough,
+    G: Passthrough,
+    Circle: Passthrough,
+  };
+});
+
 jest.mock("expo-blur", () => {
   const React = require("react");
   const { View } = require("react-native");
