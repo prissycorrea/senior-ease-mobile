@@ -126,6 +126,9 @@ describe("App", () => {
         "08:00h",
       );
       fireEvent.press(await screen.findByTestId("add-task-submit"));
+      expect(await screen.findByTestId("add-task-success-screen")).toBeTruthy();
+      expect(await screen.findByText("Muito bem!")).toBeTruthy();
+      fireEvent.press(await screen.findByTestId("add-task-success-home"));
       expect(await screen.findByText("Nova tarefa teste")).toBeTruthy();
       expect(await screen.findByText("Amanhã — 08:00h")).toBeTruthy();
     });

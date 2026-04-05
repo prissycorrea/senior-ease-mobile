@@ -243,7 +243,6 @@ export function MainAppScreen({ userDisplayName, onBack }: Props): ReactElement 
       ...prev,
       { id, title, subtitle: sub, done: false },
     ]);
-    setAddTaskVisible(false);
   }, []);
 
   const handleAgenda = useCallback(() => {
