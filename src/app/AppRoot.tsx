@@ -8,11 +8,15 @@ import type { AppSettings } from "../domain/entities/AppSettings";
 import { clampFontScale } from "../domain/entities/fontScale";
 import type { ThemePreference } from "../domain/entities/ThemePreference";
 import { CompleteFontSizeOnboardingUseCase } from "../domain/usecases/CompleteFontSizeOnboardingUseCase";
-import { CompleteWelcomeScreenUseCase } from "../domain/usecases/CompleteWelcomeScreenUseCase";
 import { GetBootstrapStateUseCase } from "../domain/usecases/GetBootstrapStateUseCase";
+import { PersistSettingsUseCase } from "../domain/usecases/PersistSettingsUseCase";
 import { RevertToFontSizeOnboardingUseCase } from "../domain/usecases/RevertToFontSizeOnboardingUseCase";
 import { RevertToVisualComfortOnboardingUseCase } from "../domain/usecases/RevertToVisualComfortOnboardingUseCase";
+import { RevertToWelcomeScreenUseCase } from "../domain/usecases/RevertToWelcomeScreenUseCase";
 import { SubmitVisualComfortOnboardingUseCase } from "../domain/usecases/SubmitVisualComfortOnboardingUseCase";
+import { CreateAccountEmailScreen } from "../presentation/screens/CreateAccountEmailScreen";
+import { CreateAccountNameScreen } from "../presentation/screens/CreateAccountNameScreen";
+import { CreateAccountPasswordScreen } from "../presentation/screens/CreateAccountPasswordScreen";
 import { FontSizeOnboardingScreen } from "../presentation/screens/FontSizeOnboardingScreen";
 import { MainAppScreen } from "../presentation/screens/MainAppScreen";
 import { VisualComfortOnboardingScreen } from "../presentation/screens/VisualComfortOnboardingScreen";
@@ -24,18 +28,17 @@ import { brandNavy } from "../presentation/theme/themePalette";
 export function AppRoot(): ReactElement {
   const {
     getBootstrap,
-    completeWelcomeStep,
+    persistSettings,
     submitVisualStep,
     completeFontStep,
     revertToVisualStep,
     revertToFontStep,
+    revertToWelcomeStep,
   } = useMemo(() => {
     const settingsRepository = new AsyncStorageSettingsRepository();
     return {
       getBootstrap: new GetBootstrapStateUseCase(settingsRepository),
-      completeWelcomeStep: new CompleteWelcomeScreenUseCase(
-        settingsRepository,
-      ),
+      persistSettings: new PersistSettingsUseCase(settingsRepository),
       submitVisualStep: new SubmitVisualComfortOnboardingUseCase(
         settingsRepository,
       ),
@@ -48,6 +51,7 @@ export function AppRoot(): ReactElement {
       revertToFontStep: new RevertToFontSizeOnboardingUseCase(
         settingsRepository,
       ),
+      revertToWelcomeStep: new RevertToWelcomeScreenUseCase(settingsRepository),
     };
   }, []);
 
@@ -76,13 +80,131 @@ export function AppRoot(): ReactElement {
     );
   }
 
-  const handleWelcomeComplete = async () => {
-    await completeWelcomeStep.execute();
+  const handleCreateAccount = async () => {
+    await persistSettings.execute({ registrationStep: 1 });
+    setSettings((prev) =>
+      prev
+        ? {
+            ...prev,
+            registrationStep: 1,
+          }
+        : prev,
+    );
+  };
+
+  const handleAlreadyHaveAccount = async () => {
+    await persistSettings.execute({
+      welcomeScreenCompleted: true,
+      registrationStep: 0,
+      registrationDraftFullName: "",
+      registrationDraftEmail: "",
+    });
     setSettings((prev) =>
       prev
         ? {
             ...prev,
             welcomeScreenCompleted: true,
+            registrationStep: 0,
+            registrationDraftFullName: "",
+            registrationDraftEmail: "",
+          }
+        : prev,
+    );
+  };
+
+  const handleSignUpStep1Back = async () => {
+    await persistSettings.execute({
+      registrationStep: 0,
+      registrationDraftFullName: "",
+      registrationDraftEmail: "",
+    });
+    setSettings((prev) =>
+      prev
+        ? {
+            ...prev,
+            registrationStep: 0,
+            registrationDraftFullName: "",
+            registrationDraftEmail: "",
+          }
+        : prev,
+    );
+  };
+
+  const handleSignUpStep1Next = async (fullName: string) => {
+    await persistSettings.execute({
+      registrationDraftFullName: fullName,
+      registrationStep: 2,
+    });
+    setSettings((prev) =>
+      prev
+        ? {
+            ...prev,
+            registrationDraftFullName: fullName,
+            registrationStep: 2,
+          }
+        : prev,
+    );
+  };
+
+  const handleSignUpStep2Back = async () => {
+    await persistSettings.execute({
+      registrationStep: 1,
+      registrationDraftEmail: "",
+    });
+    setSettings((prev) =>
+      prev
+        ? {
+            ...prev,
+            registrationStep: 1,
+            registrationDraftEmail: "",
+          }
+        : prev,
+    );
+  };
+
+  const handleSignUpStep2Next = async (draftEmail: string) => {
+    await persistSettings.execute({
+      registrationDraftEmail: draftEmail,
+      registrationStep: 3,
+    });
+    setSettings((prev) =>
+      prev
+        ? {
+            ...prev,
+            registrationDraftEmail: draftEmail,
+            registrationStep: 3,
+          }
+        : prev,
+    );
+  };
+
+  const handleSignUpStep3Back = async () => {
+    await persistSettings.execute({ registrationStep: 2 });
+    setSettings((prev) =>
+      prev
+        ? {
+            ...prev,
+            registrationStep: 2,
+          }
+        : prev,
+    );
+  };
+
+  const handleSignUpComplete = async () => {
+    await persistSettings.execute({
+      welcomeScreenCompleted: true,
+      registrationStep: 0,
+      registrationDraftFullName: "",
+      registrationDraftEmail: "",
+    });
+    setSettings((prev) =>
+      prev
+        ? {
+            ...prev,
+            welcomeScreenCompleted: true,
+            registrationStep: 0,
+            registrationDraftFullName: "",
+            registrationDraftEmail: "",
           }
         : prev,
     );
@@ -127,14 +249,38 @@ export function AppRoot(): ReactElement {
     );
   };
 
-  /** Volta ao passo de tamanho da letra (tela inicial pós-onboarding e app principal). */
+  /** Volta da welcome para o passo de tamanho da letra. */
   const handleBackToFontSizeStep = async () => {
     await revertToFontStep.execute();
+    await persistSettings.execute({
+      registrationStep: 0,
+      registrationDraftFullName: "",
+      registrationDraftEmail: "",
+    });
     setSettings((prev) =>
       prev
         ? {
             ...prev,
             fontSizeOnboardingCompleted: false,
+            registrationStep: 0,
+            registrationDraftFullName: "",
+            registrationDraftEmail: "",
+          }
+        : prev,
+    );
+  };
+
+  /** Volta da tela principal para a welcome (mantém tema e fonte já escolhidos). */
+  const handleBackFromMainAppToWelcome = async () => {
+    await revertToWelcomeStep.execute();
+    setSettings((prev) =>
+      prev
+        ? {
+            ...prev,
+            welcomeScreenCompleted: false,
+            registrationStep: 0,
+            registrationDraftFullName: "",
+            registrationDraftEmail: "",
           }
         : prev,
     );
@@ -160,9 +306,36 @@ export function AppRoot(): ReactElement {
       );
     }
     if (!settings.welcomeScreenCompleted) {
+      if (settings.registrationStep === 1) {
+        return (
+          <CreateAccountNameScreen
+            initialFullName={settings.registrationDraftFullName}
+            onBack={handleSignUpStep1Back}
+            onNext={handleSignUpStep1Next}
+          />
+        );
+      }
+      if (settings.registrationStep === 2) {
+        return (
+          <CreateAccountEmailScreen
+            initialEmail={settings.registrationDraftEmail}
+            onBack={handleSignUpStep2Back}
+            onNext={handleSignUpStep2Next}
+          />
+        );
+      }
+      if (settings.registrationStep === 3) {
+        return (
+          <CreateAccountPasswordScreen
+            onBack={handleSignUpStep3Back}
+            onComplete={handleSignUpComplete}
+          />
+        );
+      }
       return (
         <WelcomeScreen
-          onContinue={handleWelcomeComplete}
+          onCreateAccount={handleCreateAccount}
+          onAlreadyHaveAccount={handleAlreadyHaveAccount}
           onBack={handleBackToFontSizeStep}
           onHelpPress={() => {
             Alert.alert(
@@ -173,7 +346,7 @@ export function AppRoot(): ReactElement {
         />
       );
     }
-    return <MainAppScreen onBack={handleBackToFontSizeStep} />;
+    return <MainAppScreen onBack={handleBackFromMainAppToWelcome} />;
   })();
 
   return (

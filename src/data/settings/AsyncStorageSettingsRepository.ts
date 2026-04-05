@@ -3,6 +3,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   defaultAppSettings,
   type AppSettings,
+  type RegistrationStep,
 } from "../../domain/entities/AppSettings";
 import { clampFontScale } from "../../domain/entities/fontScale";
 import type { ThemePreference } from "../../domain/entities/ThemePreference";
@@ -18,7 +19,15 @@ type StoredSettings = {
   visualOnboardingCompleted?: boolean;
   fontSizeOnboardingCompleted?: boolean;
   fontScaleMultiplier?: number;
+  registrationStep?: number;
+  registrationDraftFullName?: string;
+  registrationDraftEmail?: string;
 };
+
+function clampRegistrationStep(n: number | undefined): RegistrationStep {
+  if (n === 1 || n === 2 || n === 3) return n;
+  return 0;
+}
 
 function parseStored(json: string | null): AppSettings {
   if (!json) {
@@ -39,6 +48,14 @@ function parseStored(json: string | null): AppSettings {
       typeof parsed.fontScaleMultiplier === "number"
         ? parsed.fontScaleMultiplier
         : defaultAppSettings.fontScaleMultiplier;
+    const draftName =
+      typeof parsed.registrationDraftFullName === "string"
+        ? parsed.registrationDraftFullName
+        : "";
+    const draftEmail =
+      typeof parsed.registrationDraftEmail === "string"
+        ? parsed.registrationDraftEmail
+        : "";
     return {
       themePreference:
         parsed.themePreference === "high_contrast"
@@ -48,6 +65,9 @@ function parseStored(json: string | null): AppSettings {
       visualOnboardingCompleted: visualDone,
       fontSizeOnboardingCompleted: fontStepDone,
       fontScaleMultiplier: clampFontScale(rawScale),
+      registrationStep: clampRegistrationStep(parsed.registrationStep),
+      registrationDraftFullName: draftName,
+      registrationDraftEmail: draftEmail,
     };
   } catch {
     return { ...defaultAppSettings };
