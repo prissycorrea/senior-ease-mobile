@@ -3,7 +3,7 @@
 <html lang="en">
 
 <head>
-    <title>Code coverage report for senior-ease-mobile/src/domain/usecases/SubmitVisualComfortOnboardingUseCase.ts</title>
+    <title>Code coverage report for senior-ease-mobile/src/presentation/layout/screenHeaderPaddingTop.ts</title>
     <meta charset="utf-8" />
     <link rel="stylesheet" href="../../../../prettify.css" />
     <link rel="stylesheet" href="../../../../base.css" />
@@ -19,34 +19,34 @@
 <body>
 <div class='wrapper'>
     <div class='pad1'>
-        <h1><a href="../../../../index.html">All files</a> / <a href="index.html">senior-ease-mobile/src/domain/usecases</a> SubmitVisualComfortOnboardingUseCase.ts</h1>
+        <h1><a href="../../../../index.html">All files</a> / <a href="index.html">senior-ease-mobile/src/presentation/layout</a> screenHeaderPaddingTop.ts</h1>
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>1/1</span>
+                <span class='fraction'>3/3</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">25% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/0</span>
+                <span class='fraction'>1/4</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>2/2</span>
+                <span class='fraction'>1/1</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>1/1</span>
+                <span class='fraction'>3/3</span>
             </div>
         
             
@@ -76,31 +76,34 @@
 <a name='L11'></a><a href='#L11'>11</a>
 <a name='L12'></a><a href='#L12'>12</a>
 <a name='L13'></a><a href='#L13'>13</a>
-<a name='L14'></a><a href='#L14'>14</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L14'></a><a href='#L14'>14</a>
+<a name='L15'></a><a href='#L15'>15</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">5x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">37x</span>
+<span class="cline-any cline-yes">37x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import type { ThemePreference } from "../entities/ThemePreference";
-import type { SettingsRepository } from "../repositories/SettingsRepository";
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { Platform, StatusBar } from "react-native";
 &nbsp;
-export class SubmitVisualComfortOnboardingUseCase {
-  constructor(private readonly settingsRepository: SettingsRepository) {}
+/** Respiro abaixo da barra de status / entalhe. */
+const GAP_BELOW_SAFE_INSET = 14;
 &nbsp;
-  execute(theme: ThemePreference): Promise&lt;void&gt; {
-    return this.settingsRepository.save({
-      themePreference: theme,
-      visualOnboardingCompleted: true,
-    });
-  }
+/**
+ * Padding superior para cabeçalho (voltar, progresso): respeita área segura e,
+ * no Android com edge-to-edge, usa a altura da status bar se `insets.top` vier 0.
+ */
+export function screenHeaderPaddingTop(insetsTop: number): number {
+  const statusBarFallback =
+    Platform.OS === "android" ? (<span class="branch-0 cbranch-no" title="branch not covered" >StatusBar.currentHeight ?? 0)</span> : 0;
+  return Math.max(insetsTop, statusBarFallback) + GAP_BELOW_SAFE_INSET;
 }
 &nbsp;</pre></td></tr></table></pre>
 

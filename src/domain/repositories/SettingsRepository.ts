@@ -5,6 +5,7 @@ export type SettingsPatch = Partial<
   Pick<
     AppSettings,
     | "themePreference"
+    | "welcomeScreenCompleted"
     | "visualOnboardingCompleted"
     | "fontSizeOnboardingCompleted"
     | "fontScaleMultiplier"
