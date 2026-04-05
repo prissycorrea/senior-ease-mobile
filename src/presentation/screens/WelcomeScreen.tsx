@@ -44,13 +44,15 @@ const BACKGROUND_IMAGE_OPACITY = 0.72;
 const BLUR_INTENSITY = 16;
 
 type Props = {
-  onContinue: () => Promise<void>;
+  onCreateAccount: () => Promise<void>;
+  onAlreadyHaveAccount: () => Promise<void>;
   onBack: () => Promise<void>;
   onHelpPress?: () => void;
 };
 
 export function WelcomeScreen({
-  onContinue,
+  onCreateAccount,
+  onAlreadyHaveAccount,
   onBack,
   onHelpPress,
 }: Props): ReactElement {
@@ -91,15 +93,25 @@ export function WelcomeScreen({
     );
   }, [isDefault, palette.background]);
 
-  const runContinue = useCallback(async () => {
+  const runCreateAccount = useCallback(async () => {
     if (busy) return;
     setBusy(true);
     try {
-      await onContinue();
+      await onCreateAccount();
     } finally {
       setBusy(false);
     }
-  }, [busy, onContinue]);
+  }, [busy, onCreateAccount]);
+
+  const runAlreadyHaveAccount = useCallback(async () => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      await onAlreadyHaveAccount();
+    } finally {
+      setBusy(false);
+    }
+  }, [busy, onAlreadyHaveAccount]);
 
   const handleBack = useCallback(async () => {
     if (backing || busy) return;
@@ -216,7 +228,7 @@ export function WelcomeScreen({
           <Pressable
             testID="welcome-primary-button"
             disabled={busy}
-            onPress={runContinue}
+            onPress={runCreateAccount}
             style={({ pressed }) => [
               styles.button,
               {
@@ -243,7 +255,7 @@ export function WelcomeScreen({
           <Pressable
             testID="welcome-secondary-button"
             disabled={busy}
-            onPress={runContinue}
+            onPress={runAlreadyHaveAccount}
             style={({ pressed }) => [
               styles.button,
               styles.buttonSecondary,

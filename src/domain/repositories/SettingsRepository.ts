@@ -9,6 +9,9 @@ export type SettingsPatch = Partial<
     | "visualOnboardingCompleted"
     | "fontSizeOnboardingCompleted"
     | "fontScaleMultiplier"
+    | "registrationStep"
+    | "registrationDraftFullName"
+    | "registrationDraftEmail"
   >
 >;
 
