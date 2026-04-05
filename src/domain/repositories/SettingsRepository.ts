@@ -12,6 +12,8 @@ export type SettingsPatch = Partial<
     | "registrationStep"
     | "registrationDraftFullName"
     | "registrationDraftEmail"
+    | "loginStep"
+    | "loginDraftEmail"
   >
 >;
 

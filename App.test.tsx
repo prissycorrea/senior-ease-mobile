@@ -1,10 +1,28 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { render, fireEvent } from "@testing-library/react-native";
+import { render, fireEvent, type RenderAPI } from "@testing-library/react-native";
 import App from "./App";
 
 beforeEach(async () => {
   await AsyncStorage.clear();
 });
+
+/** Welcome → login (2 etapas) → app principal (protótipo sem API real). */
+async function completeLoginFromWelcome(screen: RenderAPI): Promise<void> {
+  fireEvent.press(await screen.findByTestId("welcome-secondary-button"));
+  expect(await screen.findByTestId("login-step-1-screen")).toBeTruthy();
+  fireEvent.changeText(
+    await screen.findByTestId("login-email-input"),
+    "teste@seniorease.app",
+  );
+  fireEvent.press(await screen.findByTestId("login-email-next"));
+  expect(await screen.findByTestId("login-step-2-screen")).toBeTruthy();
+  fireEvent.changeText(
+    await screen.findByTestId("login-password-input"),
+    "Senha123",
+  );
+  fireEvent.press(await screen.findByTestId("login-password-submit"));
+  expect(await screen.findByText("Senior Ease")).toBeTruthy();
+}
 
 describe("App", () => {
   describe("Tela de conforto visual", () => {
@@ -98,9 +116,7 @@ describe("App", () => {
 
       fireEvent.press(await screen.findByText("Próximo"));
       expect(await screen.findByTestId("welcome-screen")).toBeTruthy();
-      fireEvent.press(await screen.findByTestId("welcome-secondary-button"));
-
-      expect(await screen.findByText("Senior Ease")).toBeTruthy();
+      await completeLoginFromWelcome(screen);
     });
   });
 
@@ -138,10 +154,21 @@ describe("App", () => {
       const screen = render(<App />);
       fireEvent.press(await screen.findByText("Próximo"));
       fireEvent.press(await screen.findByText("Próximo"));
-      fireEvent.press(await screen.findByTestId("welcome-secondary-button"));
-      expect(await screen.findByText("Senior Ease")).toBeTruthy();
+      await completeLoginFromWelcome(screen);
 
       fireEvent.press(await screen.findByLabelText("Voltar"));
+
+      expect(await screen.findByTestId("welcome-screen")).toBeTruthy();
+    });
+
+    it("login etapa 1: voltar retorna à boas-vindas", async () => {
+      const screen = render(<App />);
+      fireEvent.press(await screen.findByText("Próximo"));
+      fireEvent.press(await screen.findByText("Próximo"));
+      fireEvent.press(await screen.findByTestId("welcome-secondary-button"));
+      await screen.findByTestId("login-step-1-screen");
+
+      fireEvent.press(await screen.findByTestId("login-email-back"));
 
       expect(await screen.findByTestId("welcome-screen")).toBeTruthy();
     });

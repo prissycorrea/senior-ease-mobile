@@ -5,15 +5,43 @@ type Props = {
   activeColor: string;
   inactiveColor: string;
   style?: ViewStyle;
+  /** 2 = login (e-mail → senha); 3 = cadastro (padrão). */
+  totalSteps?: 2 | 3;
 };
 
-/** Etapa 1: barra ativa à esquerda + dois pontos; 2: ponto + barra + ponto; 3: dois pontos + barra. */
+/** Cadastro (3): etapa 1 barra + 2 pontos; 2: ponto + barra + ponto; 3: 2 pontos + barra. Login (2): etapa 1 barra + ponto; 2: ponto + barra. */
 export function SignUpFlowProgress({
   currentStep,
   activeColor,
   inactiveColor,
   style,
+  totalSteps = 3,
 }: Props) {
+  if (totalSteps === 2) {
+    if (currentStep === 1) {
+      return (
+        <View style={[styles.row, style]}>
+          <View
+            style={[styles.longBar, { backgroundColor: activeColor }]}
+          />
+          <View
+            style={[styles.dot, { backgroundColor: inactiveColor }]}
+          />
+        </View>
+      );
+    }
+    return (
+      <View style={[styles.row, style]}>
+        <View
+          style={[styles.dot, { backgroundColor: inactiveColor }]}
+        />
+        <View
+          style={[styles.longBar, { backgroundColor: activeColor }]}
+        />
+      </View>
+    );
+  }
+
   if (currentStep === 1) {
     return (
       <View style={[styles.row, style]}>
