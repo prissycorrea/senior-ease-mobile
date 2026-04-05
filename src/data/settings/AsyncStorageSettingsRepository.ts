@@ -3,6 +3,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   defaultAppSettings,
   type AppSettings,
+  type LoginStep,
   type RegistrationStep,
 } from "../../domain/entities/AppSettings";
 import { clampFontScale } from "../../domain/entities/fontScale";
@@ -22,10 +23,17 @@ type StoredSettings = {
   registrationStep?: number;
   registrationDraftFullName?: string;
   registrationDraftEmail?: string;
+  loginStep?: number;
+  loginDraftEmail?: string;
 };
 
 function clampRegistrationStep(n: number | undefined): RegistrationStep {
   if (n === 1 || n === 2 || n === 3) return n;
+  return 0;
+}
+
+function clampLoginStep(n: number | undefined): LoginStep {
+  if (n === 1 || n === 2) return n;
   return 0;
 }
 
@@ -56,6 +64,10 @@ function parseStored(json: string | null): AppSettings {
       typeof parsed.registrationDraftEmail === "string"
         ? parsed.registrationDraftEmail
         : "";
+    const loginMail =
+      typeof parsed.loginDraftEmail === "string"
+        ? parsed.loginDraftEmail
+        : "";
     return {
       themePreference:
         parsed.themePreference === "high_contrast"
@@ -68,6 +80,8 @@ function parseStored(json: string | null): AppSettings {
       registrationStep: clampRegistrationStep(parsed.registrationStep),
       registrationDraftFullName: draftName,
       registrationDraftEmail: draftEmail,
+      loginStep: clampLoginStep(parsed.loginStep),
+      loginDraftEmail: loginMail,
     };
   } catch {
     return { ...defaultAppSettings };

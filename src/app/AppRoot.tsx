@@ -4,6 +4,11 @@ import { ActivityIndicator, Alert, StyleSheet, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { AsyncStorageSettingsRepository } from "../data/settings/AsyncStorageSettingsRepository";
+import {
+  DEMO_LOGIN_EMAIL,
+  DEMO_LOGIN_PASSWORD,
+  isDemoLoginValid,
+} from "../domain/constants/demoLoginCredentials";
 import type { AppSettings } from "../domain/entities/AppSettings";
 import { clampFontScale } from "../domain/entities/fontScale";
 import type { ThemePreference } from "../domain/entities/ThemePreference";
@@ -18,6 +23,8 @@ import { CreateAccountEmailScreen } from "../presentation/screens/CreateAccountE
 import { CreateAccountNameScreen } from "../presentation/screens/CreateAccountNameScreen";
 import { CreateAccountPasswordScreen } from "../presentation/screens/CreateAccountPasswordScreen";
 import { FontSizeOnboardingScreen } from "../presentation/screens/FontSizeOnboardingScreen";
+import { LoginEmailScreen } from "../presentation/screens/LoginEmailScreen";
+import { LoginPasswordScreen } from "../presentation/screens/LoginPasswordScreen";
 import { MainAppScreen } from "../presentation/screens/MainAppScreen";
 import { VisualComfortOnboardingScreen } from "../presentation/screens/VisualComfortOnboardingScreen";
 import { WelcomeScreen } from "../presentation/screens/WelcomeScreen";
@@ -81,12 +88,18 @@ export function AppRoot(): ReactElement {
   }
 
   const handleCreateAccount = async () => {
-    await persistSettings.execute({ registrationStep: 1 });
+    await persistSettings.execute({
+      registrationStep: 1,
+      loginStep: 0,
+      loginDraftEmail: "",
+    });
     setSettings((prev) =>
       prev
         ? {
             ...prev,
             registrationStep: 1,
+            loginStep: 0,
+            loginDraftEmail: "",
           }
         : prev,
     );
@@ -94,7 +107,80 @@ export function AppRoot(): ReactElement {
 
   const handleAlreadyHaveAccount = async () => {
     await persistSettings.execute({
+      loginStep: 1,
+      loginDraftEmail: "",
+      registrationStep: 0,
+      registrationDraftFullName: "",
+      registrationDraftEmail: "",
+    });
+    setSettings((prev) =>
+      prev
+        ? {
+            ...prev,
+            loginStep: 1,
+            loginDraftEmail: "",
+            registrationStep: 0,
+            registrationDraftFullName: "",
+            registrationDraftEmail: "",
+          }
+        : prev,
+    );
+  };
+
+  const handleLoginEmailBack = async () => {
+    await persistSettings.execute({ loginStep: 0, loginDraftEmail: "" });
+    setSettings((prev) =>
+      prev
+        ? {
+            ...prev,
+            loginStep: 0,
+            loginDraftEmail: "",
+          }
+        : prev,
+    );
+  };
+
+  const handleLoginEmailNext = async (email: string) => {
+    await persistSettings.execute({
+      loginDraftEmail: email,
+      loginStep: 2,
+    });
+    setSettings((prev) =>
+      prev
+        ? {
+            ...prev,
+            loginDraftEmail: email,
+            loginStep: 2,
+          }
+        : prev,
+    );
+  };
+
+  const handleLoginPasswordBack = async () => {
+    await persistSettings.execute({ loginStep: 1 });
+    setSettings((prev) =>
+      prev
+        ? {
+            ...prev,
+            loginStep: 1,
+          }
+        : prev,
+    );
+  };
+
+  const handleLoginComplete = async (password: string): Promise<boolean> => {
+    const email = settings.loginDraftEmail ?? "";
+    if (!isDemoLoginValid(email, password)) {
+      Alert.alert(
+        "Não foi possível entrar",
+        `E-mail ou senha incorretos.\n\nConta de teste:\n${DEMO_LOGIN_EMAIL}\nSenha: ${DEMO_LOGIN_PASSWORD}`,
+      );
+      return false;
+    }
+    await persistSettings.execute({
       welcomeScreenCompleted: true,
+      loginStep: 0,
+      loginDraftEmail: "",
       registrationStep: 0,
       registrationDraftFullName: "",
       registrationDraftEmail: "",
@@ -104,12 +190,15 @@ export function AppRoot(): ReactElement {
         ? {
             ...prev,
             welcomeScreenCompleted: true,
+            loginStep: 0,
+            loginDraftEmail: "",
             registrationStep: 0,
             registrationDraftFullName: "",
             registrationDraftEmail: "",
           }
         : prev,
     );
+    return true;
   };
 
   const handleSignUpStep1Back = async () => {
@@ -117,6 +206,8 @@ export function AppRoot(): ReactElement {
       registrationStep: 0,
       registrationDraftFullName: "",
       registrationDraftEmail: "",
+      loginStep: 0,
+      loginDraftEmail: "",
     });
     setSettings((prev) =>
       prev
@@ -125,6 +216,8 @@ export function AppRoot(): ReactElement {
             registrationStep: 0,
             registrationDraftFullName: "",
             registrationDraftEmail: "",
+            loginStep: 0,
+            loginDraftEmail: "",
           }
         : prev,
     );
@@ -134,6 +227,8 @@ export function AppRoot(): ReactElement {
     await persistSettings.execute({
       registrationDraftFullName: fullName,
       registrationStep: 2,
+      loginStep: 0,
+      loginDraftEmail: "",
     });
     setSettings((prev) =>
       prev
@@ -141,6 +236,8 @@ export function AppRoot(): ReactElement {
             ...prev,
             registrationDraftFullName: fullName,
             registrationStep: 2,
+            loginStep: 0,
+            loginDraftEmail: "",
           }
         : prev,
     );
@@ -150,6 +247,8 @@ export function AppRoot(): ReactElement {
     await persistSettings.execute({
       registrationStep: 1,
       registrationDraftEmail: "",
+      loginStep: 0,
+      loginDraftEmail: "",
     });
     setSettings((prev) =>
       prev
@@ -157,6 +256,8 @@ export function AppRoot(): ReactElement {
             ...prev,
             registrationStep: 1,
             registrationDraftEmail: "",
+            loginStep: 0,
+            loginDraftEmail: "",
           }
         : prev,
     );
@@ -166,6 +267,8 @@ export function AppRoot(): ReactElement {
     await persistSettings.execute({
       registrationDraftEmail: draftEmail,
       registrationStep: 3,
+      loginStep: 0,
+      loginDraftEmail: "",
     });
     setSettings((prev) =>
       prev
@@ -173,6 +276,8 @@ export function AppRoot(): ReactElement {
             ...prev,
             registrationDraftEmail: draftEmail,
             registrationStep: 3,
+            loginStep: 0,
+            loginDraftEmail: "",
           }
         : prev,
     );
@@ -196,6 +301,8 @@ export function AppRoot(): ReactElement {
       registrationStep: 0,
       registrationDraftFullName: "",
       registrationDraftEmail: "",
+      loginStep: 0,
+      loginDraftEmail: "",
     });
     setSettings((prev) =>
       prev
@@ -205,6 +312,8 @@ export function AppRoot(): ReactElement {
             registrationStep: 0,
             registrationDraftFullName: "",
             registrationDraftEmail: "",
+            loginStep: 0,
+            loginDraftEmail: "",
           }
         : prev,
     );
@@ -256,6 +365,8 @@ export function AppRoot(): ReactElement {
       registrationStep: 0,
       registrationDraftFullName: "",
       registrationDraftEmail: "",
+      loginStep: 0,
+      loginDraftEmail: "",
     });
     setSettings((prev) =>
       prev
@@ -265,6 +376,8 @@ export function AppRoot(): ReactElement {
             registrationStep: 0,
             registrationDraftFullName: "",
             registrationDraftEmail: "",
+            loginStep: 0,
+            loginDraftEmail: "",
           }
         : prev,
     );
@@ -281,6 +394,8 @@ export function AppRoot(): ReactElement {
             registrationStep: 0,
             registrationDraftFullName: "",
             registrationDraftEmail: "",
+            loginStep: 0,
+            loginDraftEmail: "",
           }
         : prev,
     );
@@ -329,6 +444,24 @@ export function AppRoot(): ReactElement {
           <CreateAccountPasswordScreen
             onBack={handleSignUpStep3Back}
             onComplete={handleSignUpComplete}
+          />
+        );
+      }
+      if (settings.loginStep === 1) {
+        return (
+          <LoginEmailScreen
+            initialEmail={settings.loginDraftEmail}
+            onBack={handleLoginEmailBack}
+            onNext={handleLoginEmailNext}
+          />
+        );
+      }
+      if (settings.loginStep === 2) {
+        return (
+          <LoginPasswordScreen
+            accountEmail={settings.loginDraftEmail}
+            onBack={handleLoginPasswordBack}
+            onComplete={handleLoginComplete}
           />
         );
       }

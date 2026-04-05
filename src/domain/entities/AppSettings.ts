@@ -4,6 +4,9 @@ import type { ThemePreference } from "./ThemePreference";
 /** 0 = fora do cadastro; 1–3 = etapas do fluxo “criar conta”. */
 export type RegistrationStep = 0 | 1 | 2 | 3;
 
+/** 0 = fora do login; 1 = e-mail; 2 = senha. */
+export type LoginStep = 0 | 1 | 2;
+
 export interface AppSettings {
   themePreference: ThemePreference;
   /** Tela inicial (boas-vindas) já vista */
@@ -18,6 +21,9 @@ export interface AppSettings {
   registrationDraftFullName: string;
   /** E-mail na etapa 2 (persistido ao avançar). */
   registrationDraftEmail: string;
+  loginStep: LoginStep;
+  /** E-mail digitado no fluxo “já tenho conta”. */
+  loginDraftEmail: string;
 }
 
 export const defaultAppSettings: AppSettings = {
@@ -29,4 +35,6 @@ export const defaultAppSettings: AppSettings = {
   registrationStep: 0,
   registrationDraftFullName: "",
   registrationDraftEmail: "",
+  loginStep: 0,
+  loginDraftEmail: "",
 };

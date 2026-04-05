@@ -10,6 +10,8 @@ export class RevertToWelcomeScreenUseCase {
       registrationStep: 0,
       registrationDraftFullName: "",
       registrationDraftEmail: "",
+      loginStep: 0,
+      loginDraftEmail: "",
     });
   }
 }
