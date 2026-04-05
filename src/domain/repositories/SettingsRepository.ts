@@ -14,6 +14,8 @@ export type SettingsPatch = Partial<
     | "registrationDraftEmail"
     | "loginStep"
     | "loginDraftEmail"
+    | "userDisplayName"
+    | "lastRegisteredDisplayName"
   >
 >;
 

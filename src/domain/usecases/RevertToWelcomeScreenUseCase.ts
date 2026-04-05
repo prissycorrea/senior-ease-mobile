@@ -12,6 +12,7 @@ export class RevertToWelcomeScreenUseCase {
       registrationDraftEmail: "",
       loginStep: 0,
       loginDraftEmail: "",
+      userDisplayName: "",
     });
   }
 }

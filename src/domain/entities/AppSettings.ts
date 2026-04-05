@@ -24,6 +24,13 @@ export interface AppSettings {
   loginStep: LoginStep;
   /** E-mail digitado no fluxo “já tenho conta”. */
   loginDraftEmail: string;
+  /** Nome para exibir na home (cadastro ou login). */
+  userDisplayName: string;
+  /**
+   * Último nome salvo ao concluir o cadastro (não é apagado ao voltar à welcome).
+   * Usado no login de demonstração para exibir o nome que a pessoa cadastrou.
+   */
+  lastRegisteredDisplayName: string;
 }
 
 export const defaultAppSettings: AppSettings = {
@@ -37,4 +44,6 @@ export const defaultAppSettings: AppSettings = {
   registrationDraftEmail: "",
   loginStep: 0,
   loginDraftEmail: "",
+  userDisplayName: "",
+  lastRegisteredDisplayName: "",
 };
