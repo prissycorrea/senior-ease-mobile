@@ -36,7 +36,13 @@ const INPUT_BG_DEFAULT = "#E8EEF4";
 const VOICE_BG_DEFAULT = "rgba(0, 86, 179, 0.14)";
 const ICON_CIRCLE_DEFAULT = "rgba(0, 86, 179, 0.12)";
 
+/** Tela de sucesso pós-criação (tema claro). */
+const SUCCESS_SCREEN_BG_DEFAULT = "#F0F4F8";
+const SUCCESS_RING_GREEN = "#1DA34D";
+const SUCCESS_HEADING_BLUE = "#0047AB";
+
 type DayMode = "today" | "tomorrow" | "custom";
+type FlowPhase = "wizard" | "success";
 
 type Props = {
   visible: boolean;
@@ -92,6 +98,7 @@ export function AddTaskScreen({
   const [remindOn, setRemindOn] = useState(false);
   const [dateFieldOpen, setDateFieldOpen] = useState(false);
   const [timeFieldOpen, setTimeFieldOpen] = useState(false);
+  const [flowPhase, setFlowPhase] = useState<FlowPhase>("wizard");
 
   const isDefault = preference === "default";
   const titleMuted = isDefault ? "#1A1A1A" : palette.text;
@@ -122,8 +129,20 @@ export function AddTaskScreen({
   const nextPadV = Math.min(22, Math.max(14, Math.round(17 * scale)));
   const rowIconSize = Math.min(22, Math.max(18, Math.round(20 * scale)));
 
+  const successScreenBg = isDefault
+    ? SUCCESS_SCREEN_BG_DEFAULT
+    : palette.background;
+  const successGreen = isDefault ? SUCCESS_RING_GREEN : "#69F0AE";
+  const successHeadingColor = isDefault
+    ? SUCCESS_HEADING_BLUE
+    : highContrastActionBlue;
+  const successRingSize = Math.min(144, Math.max(100, Math.round(120 * scale)));
+  const successCheckSize = Math.min(72, Math.max(48, Math.round(56 * scale)));
+  const successTitleSize = Math.min(32, Math.max(24, Math.round(28 * scale)));
+
   useEffect(() => {
     if (visible) {
+      setFlowPhase("wizard");
       setStep(1);
       setTitle("");
       setDayMode("today");
@@ -137,9 +156,11 @@ export function AddTaskScreen({
 
   useEffect(() => {
     if (visible) {
-      void SystemUI.setBackgroundColorAsync(topBg);
+      const bg =
+        flowPhase === "success" ? successScreenBg : topBg;
+      void SystemUI.setBackgroundColorAsync(bg);
     }
-  }, [visible, topBg]);
+  }, [visible, topBg, flowPhase, successScreenBg]);
 
   const handleClose = useCallback(() => {
     onClose();
@@ -184,6 +205,7 @@ export function AddTaskScreen({
     }
     const sub = formatSubtitle(dayMode, customDate, timeText, remindOn);
     onCreate(t, sub);
+    setFlowPhase("success");
   }, [customDate, dayMode, onCreate, remindOn, timeText, title]);
 
   const selectToday = useCallback(() => {
@@ -209,6 +231,9 @@ export function AddTaskScreen({
 
   const canStep1Next = title.trim().length >= 1;
 
+  const rootBg =
+    flowPhase === "success" ? successScreenBg : topBg;
+
   return (
     <Modal
       visible={visible}
@@ -218,8 +243,114 @@ export function AddTaskScreen({
     >
       <View
         testID="add-task-screen"
-        style={[styles.screenRoot, { backgroundColor: topBg }]}
+        style={[styles.screenRoot, { backgroundColor: rootBg }]}
       >
+        {flowPhase === "success" ? (
+          <SafeAreaView style={styles.safe} edges={["left", "right", "bottom"]}>
+            <StatusBar style={isDefault ? "dark" : "light"} />
+            <View
+              testID="add-task-success-screen"
+              style={{ flex: 1 }}
+            >
+              <View
+                style={[
+                  styles.successHeaderRow,
+                  { paddingTop: screenHeaderPaddingTop(insets.top) },
+                ]}
+              >
+                <View style={{ flex: 1 }} />
+                <Pressable
+                  testID="add-task-success-settings"
+                  onPress={handleSettings}
+                  style={({ pressed }) => [
+                    styles.roundBtn,
+                    {
+                      backgroundColor: isDefault ? "#FFFFFF" : palette.surface,
+                      borderWidth: isDefault ? 0 : 2,
+                      borderColor: isDefault ? "transparent" : palette.border,
+                      opacity: pressed ? 0.88 : 1,
+                    },
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Configurações"
+                >
+                  <Ionicons
+                    name="settings-outline"
+                    size={Math.min(24, Math.max(20, Math.round(22 * scale)))}
+                    color={isDefault ? "#5C6B7A" : palette.textMuted}
+                  />
+                </Pressable>
+              </View>
+
+              <View style={styles.successCenter}>
+                <View
+                  style={[
+                    styles.successRing,
+                    {
+                      width: successRingSize,
+                      height: successRingSize,
+                      borderRadius: successRingSize / 2,
+                      borderColor: successGreen,
+                    },
+                  ]}
+                >
+                  <Ionicons
+                    name="checkmark"
+                    size={successCheckSize}
+                    color={successGreen}
+                  />
+                </View>
+                <Text
+                  style={{
+                    fontFamily: fontBold,
+                    fontSize: successTitleSize,
+                    color: successHeadingColor,
+                    marginTop: 28,
+                    textAlign: "center",
+                  }}
+                >
+                  Muito bem!
+                </Text>
+              </View>
+
+              <View
+                style={[
+                  styles.footerBar,
+                  {
+                    backgroundColor: successScreenBg,
+                    paddingBottom: 18 + insets.bottom,
+                  },
+                ]}
+              >
+                <Pressable
+                  testID="add-task-success-home"
+                  onPress={handleClose}
+                  style={({ pressed }) => [
+                    styles.nextButton,
+                    {
+                      backgroundColor: primaryBtnBg,
+                      minHeight: nextMinH,
+                      paddingVertical: nextPadV,
+                      opacity: pressed ? 0.92 : 1,
+                    },
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Voltar ao início"
+                >
+                  <Text
+                    style={{
+                      fontFamily: fontBold,
+                      fontSize: btnLabelSize,
+                      color: primaryBtnText,
+                    }}
+                  >
+                    Voltar ao início
+                  </Text>
+                </Pressable>
+              </View>
+            </View>
+          </SafeAreaView>
+        ) : (
         <SafeAreaView style={styles.safe} edges={["left", "right", "bottom"]}>
           <StatusBar style={isDefault ? "dark" : "light"} />
 
@@ -796,6 +927,7 @@ export function AddTaskScreen({
             )}
           </View>
         </SafeAreaView>
+        )}
       </View>
     </Modal>
   );
@@ -909,5 +1041,22 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     width: "100%",
+  },
+  successHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 28,
+    paddingBottom: 8,
+  },
+  successCenter: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 28,
+  },
+  successRing: {
+    borderWidth: 5,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });
