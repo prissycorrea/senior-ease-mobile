@@ -9,7 +9,6 @@ import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useState, type ReactElement } from "react";
 import {
   ActivityIndicator,
-  Alert,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -39,13 +38,10 @@ const TITLE_LINE = 42;
 const TITLE_LH = 48;
 const BODY_BASE = 16;
 const INPUT_BASE = 17;
-const BTN_LABEL_BASE = 17;
 const NEXT_BASE = 17;
-const MIC_BASE = 22;
 
 const TOP_TINT_DEFAULT = "#DCE8F2";
 const INPUT_BG_DEFAULT = "#E8EEF4";
-const VOICE_BG_DEFAULT = "rgba(0, 86, 179, 0.14)";
 
 type Props = {
   initialFullName: string;
@@ -82,20 +78,12 @@ export function CreateAccountNameScreen({
   const inputBg = isDefault ? INPUT_BG_DEFAULT : "#001B3D";
   const inputBorder = isDefault ? "#B8D4E8" : palette.border;
   const placeholderColor = isDefault ? "#8FA3B3" : "rgba(255,255,255,0.45)";
-  const voiceBg = isDefault ? VOICE_BG_DEFAULT : "rgba(84, 166, 255, 0.2)";
-  const voiceIconColor = isDefault ? brandNavy : highContrastActionBlue;
-  const voiceTextColor = isDefault ? brandNavy : palette.text;
 
   const titleSize = Math.min(48, Math.max(28, Math.round(TITLE_LINE * scale)));
   const titleLh = Math.min(54, Math.max(32, Math.round(TITLE_LH * scale)));
   const bodySize = Math.min(22, Math.max(14, Math.round(BODY_BASE * scale)));
   const inputSize = Math.min(24, Math.max(15, Math.round(INPUT_BASE * scale)));
-  const btnLabelSize = Math.min(
-    20,
-    Math.max(14, Math.round(BTN_LABEL_BASE * scale)),
-  );
   const nextSize = Math.min(22, Math.max(15, Math.round(NEXT_BASE * scale)));
-  const micSize = Math.min(28, Math.max(18, Math.round(MIC_BASE * scale)));
   const nextMinH = Math.min(120, Math.max(52, Math.round(56 * scale)));
   const nextPadV = Math.min(22, Math.max(14, Math.round(17 * scale)));
   const inputMinH = Math.min(72, Math.max(52, Math.round(56 * scale)));
@@ -129,14 +117,6 @@ export function CreateAccountNameScreen({
       setSubmitting(false);
     }
   }, [canNext, name, onNext, submitting]);
-
-  const handleVoicePress = useCallback(() => {
-    Alert.alert(
-      "Voz",
-      "Em breve você poderá ditar o nome por aqui.",
-      [{ text: "OK" }],
-    );
-  }, []);
 
   return (
     <View
@@ -234,7 +214,7 @@ export function CreateAccountNameScreen({
                 marginBottom: 20,
               }}
             >
-              Digite ou use a sua voz para informar o seu nome completo.
+              Digite o seu nome completo.
             </Text>
 
             <TextInput
@@ -260,34 +240,6 @@ export function CreateAccountNameScreen({
               autoCorrect={false}
               autoCapitalize="words"
             />
-
-            <Pressable
-              testID="sign-up-voice-button"
-              onPress={handleVoicePress}
-              style={({ pressed }) => [
-                styles.voiceButton,
-                {
-                  backgroundColor: voiceBg,
-                  minHeight: inputMinH,
-                  opacity: pressed ? 0.9 : 1,
-                },
-              ]}
-              accessibilityRole="button"
-              accessibilityLabel="Ou use a voz tocando aqui"
-            >
-              <Ionicons name="mic" size={micSize} color={voiceIconColor} />
-              <Text
-                style={{
-                  fontFamily: fontBold,
-                  fontSize: btnLabelSize,
-                  color: voiceTextColor,
-                  flex: 1,
-                  textAlign: "center",
-                }}
-              >
-                Ou use a voz tocando aqui
-              </Text>
-            </Pressable>
           </ScrollView>
         </View>
 
@@ -397,14 +349,6 @@ const styles = StyleSheet.create({
     paddingTop: 28,
     paddingBottom: 16,
     flexGrow: 1,
-  },
-  voiceButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 12,
-    borderRadius: 999,
-    paddingHorizontal: 20,
   },
   footerBar: {
     paddingHorizontal: 28,

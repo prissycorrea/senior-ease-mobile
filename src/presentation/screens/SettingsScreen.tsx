@@ -346,40 +346,6 @@ export function SettingsScreen({
             />
           </View>
 
-          <Pressable
-            onPress={() => {
-              Alert.alert(
-                "Configurar voz",
-                "Em breve você poderá ajustar leitura e ditado por aqui.",
-              );
-            }}
-            style={({ pressed }) => [
-              styles.rowCard,
-              {
-                backgroundColor: rowBg,
-                borderColor: rowBorder,
-                opacity: pressed ? 0.92 : 1,
-              },
-            ]}
-            accessibilityRole="button"
-            accessibilityLabel="Configurar voz"
-          >
-            <View style={[styles.iconBox, { width: iconBox, height: iconBox }]}>
-              <Ionicons name="mic-outline" size={22} color={iconTint} />
-            </View>
-            <Text
-              style={{
-                fontFamily: fontBold,
-                fontSize: rowTitleSize,
-                color: titleColor,
-                flex: 1,
-              }}
-            >
-              Configurar Voz
-            </Text>
-            <Ionicons name="chevron-forward" size={22} color={chevronColor} />
-          </Pressable>
-
           <Text
             style={[
               styles.sectionLabel,

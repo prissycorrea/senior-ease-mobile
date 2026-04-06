@@ -48,7 +48,7 @@ const MIN_PASSWORD_LEN = 6;
 
 type Props = {
   onBack: () => Promise<void>;
-  onComplete: () => Promise<void>;
+  onComplete: (password: string) => Promise<void>;
 };
 
 export function CreateAccountPasswordScreen({
@@ -120,11 +120,11 @@ export function CreateAccountPasswordScreen({
     if (!canNext || submitting) return;
     setSubmitting(true);
     try {
-      await onComplete();
+      await onComplete(password.trim());
     } finally {
       setSubmitting(false);
     }
-  }, [canNext, onComplete, submitting]);
+  }, [canNext, onComplete, password, submitting]);
 
   const passwordInput = (
     label: string,

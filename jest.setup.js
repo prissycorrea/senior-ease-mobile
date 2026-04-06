@@ -1,3 +1,33 @@
+process.env.EXPO_PUBLIC_USE_FIREBASE = "false";
+
+jest.mock("firebase/app", () => ({
+  initializeApp: jest.fn(() => ({})),
+}));
+
+jest.mock("firebase/auth", () => ({
+  getAuth: jest.fn(() => ({})),
+  onAuthStateChanged: jest.fn((_auth, cb) => {
+    cb(null);
+    return jest.fn();
+  }),
+  signInWithEmailAndPassword: jest.fn(),
+  createUserWithEmailAndPassword: jest.fn(),
+  signOut: jest.fn(),
+  updateProfile: jest.fn(),
+}));
+
+jest.mock("firebase/firestore", () => ({
+  getFirestore: jest.fn(() => ({})),
+  collection: jest.fn(),
+  query: jest.fn(),
+  orderBy: jest.fn(),
+  onSnapshot: jest.fn(() => jest.fn()),
+  addDoc: jest.fn(),
+  deleteDoc: jest.fn(),
+  doc: jest.fn(),
+  updateDoc: jest.fn(),
+}));
+
 jest.mock("@react-native-async-storage/async-storage", () =>
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   require("@react-native-async-storage/async-storage/jest/async-storage-mock"),

@@ -1,8 +1,25 @@
 import { StatusBar } from "expo-status-bar";
+import type { User } from "firebase/auth";
+import { onAuthStateChanged } from "firebase/auth";
 import { useEffect, useMemo, useState, type ReactElement } from "react";
 import { ActivityIndicator, Alert, StyleSheet, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
+import { useFirebaseAuth } from "../config/useFirebaseAuth";
+import { getFirebaseAuth } from "../data/firebase/firebaseApp";
+import {
+  firebaseAuthErrorMessage,
+  firebaseSignIn,
+  firebaseSignOut,
+  firebaseSignUp,
+} from "../data/firebase/firebaseAuth";
+import {
+  addFirestoreTask,
+  deleteFirestoreTask,
+  setFirestoreTaskCompleted,
+  subscribeTasks,
+  updateFirestoreTaskFromHomeActivity,
+} from "../data/firebase/firebaseTasks";
 import { AsyncStorageSettingsRepository } from "../data/settings/AsyncStorageSettingsRepository";
 import {
   DEMO_LOGIN_EMAIL,
@@ -27,7 +44,11 @@ import { CreateAccountPasswordScreen } from "../presentation/screens/CreateAccou
 import { FontSizeOnboardingScreen } from "../presentation/screens/FontSizeOnboardingScreen";
 import { LoginEmailScreen } from "../presentation/screens/LoginEmailScreen";
 import { LoginPasswordScreen } from "../presentation/screens/LoginPasswordScreen";
-import { MainAppScreen } from "../presentation/screens/MainAppScreen";
+import {
+  MainAppScreen,
+  type MainAppRemoteTasks,
+} from "../presentation/screens/MainAppScreen";
+import type { HomeActivity } from "../presentation/types/homeActivity";
 import { VisualComfortOnboardingScreen } from "../presentation/screens/VisualComfortOnboardingScreen";
 import { WelcomeScreen } from "../presentation/screens/WelcomeScreen";
 import { FontScaleProvider } from "../presentation/theme/FontScaleContext";
@@ -65,6 +86,10 @@ export function AppRoot(): ReactElement {
   }, []);
 
   const [settings, setSettings] = useState<AppSettings | null>(null);
+  const [authUser, setAuthUser] = useState<User | null | undefined>(() =>
+    useFirebaseAuth ? undefined : null,
+  );
+  const [remoteActivities, setRemoteActivities] = useState<HomeActivity[]>([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -78,7 +103,85 @@ export function AppRoot(): ReactElement {
     };
   }, [getBootstrap]);
 
-  if (!settings) {
+  useEffect(() => {
+    if (!useFirebaseAuth) return;
+    const auth = getFirebaseAuth();
+    const unsub = onAuthStateChanged(auth, (u) => {
+      setAuthUser(u);
+      if (!u) {
+        setRemoteActivities([]);
+      }
+    });
+    return unsub;
+  }, []);
+
+  useEffect(() => {
+    if (!useFirebaseAuth || !authUser) return;
+    return subscribeTasks(
+      (list) => {
+        setRemoteActivities(list);
+      },
+      (err) => {
+        console.warn("[Firestore tasks]", err);
+      },
+    );
+  }, [authUser]);
+
+  useEffect(() => {
+    if (!useFirebaseAuth || authUser === undefined || !settings) return;
+    if (
+      authUser &&
+      settings.visualOnboardingCompleted &&
+      settings.fontSizeOnboardingCompleted &&
+      !settings.welcomeScreenCompleted
+    ) {
+      const name =
+        authUser.displayName?.trim() ||
+        authUser.email?.split("@")[0] ||
+        "Usuário";
+      void persistSettings.execute({
+        welcomeScreenCompleted: true,
+        userDisplayName: name,
+      });
+      setSettings((prev) =>
+        prev
+          ? {
+              ...prev,
+              welcomeScreenCompleted: true,
+              userDisplayName: name,
+            }
+          : prev,
+      );
+    }
+  }, [authUser, persistSettings, settings]);
+
+  const remoteTasksBridge: MainAppRemoteTasks | undefined = useMemo(() => {
+    if (!useFirebaseAuth || !authUser) return undefined;
+    return {
+      activities: remoteActivities,
+      createTask: async (_title, _subtitle, _scheduleDate, periodIso) => {
+        await addFirestoreTask({
+          task: _title,
+          period: periodIso,
+          completed: false,
+        });
+      },
+      saveTask: async (previous, title, subtitle) => {
+        await updateFirestoreTaskFromHomeActivity(previous, title, subtitle);
+      },
+      toggleDone: async (id) => {
+        const row = remoteActivities.find((a) => a.id === id);
+        if (row) {
+          await setFirestoreTaskCompleted(id, !row.done);
+        }
+      },
+      deleteTask: async (id) => {
+        await deleteFirestoreTask(id);
+      },
+    };
+  }, [authUser, remoteActivities]);
+
+  if (!settings || (useFirebaseAuth && authUser === undefined)) {
     return (
       <View style={styles.root}>
         <View style={styles.boot}>
@@ -174,6 +277,49 @@ export function AppRoot(): ReactElement {
 
   const handleLoginComplete = async (password: string): Promise<boolean> => {
     const email = settings.loginDraftEmail ?? "";
+    if (useFirebaseAuth) {
+      try {
+        const user = await firebaseSignIn(email, password);
+        const displayName =
+          user.displayName?.trim() ||
+          user.email?.split("@")[0] ||
+          "Usuário";
+        await persistSettings.execute({
+          welcomeScreenCompleted: true,
+          loginStep: 0,
+          loginDraftEmail: "",
+          registrationStep: 0,
+          registrationDraftFullName: "",
+          registrationDraftEmail: "",
+          userDisplayName: displayName,
+        });
+        setSettings((prev) =>
+          prev
+            ? {
+                ...prev,
+                welcomeScreenCompleted: true,
+                loginStep: 0,
+                loginDraftEmail: "",
+                registrationStep: 0,
+                registrationDraftFullName: "",
+                registrationDraftEmail: "",
+                userDisplayName: displayName,
+              }
+            : prev,
+        );
+        return true;
+      } catch (e: unknown) {
+        const code =
+          e && typeof e === "object" && "code" in e
+            ? String((e as { code: string }).code)
+            : undefined;
+        Alert.alert(
+          "Não foi possível entrar",
+          firebaseAuthErrorMessage(code),
+        );
+        return false;
+      }
+    }
     if (!isDemoLoginValid(email, password)) {
       Alert.alert(
         "Não foi possível entrar",
@@ -304,9 +450,47 @@ export function AppRoot(): ReactElement {
     );
   };
 
-  const handleSignUpComplete = async () => {
-    const name =
-      settings.registrationDraftFullName.trim() || "Usuário";
+  const handleSignUpComplete = async (password: string) => {
+    const name = settings.registrationDraftFullName.trim() || "Usuário";
+    const email = settings.registrationDraftEmail.trim();
+    if (useFirebaseAuth) {
+      try {
+        const user = await firebaseSignUp(name, email, password);
+        const displayName = user.displayName?.trim() || name;
+        await persistSettings.execute({
+          welcomeScreenCompleted: true,
+          registrationStep: 0,
+          registrationDraftFullName: "",
+          registrationDraftEmail: "",
+          loginStep: 0,
+          loginDraftEmail: "",
+          userDisplayName: displayName,
+          lastRegisteredDisplayName: displayName,
+        });
+        setSettings((prev) =>
+          prev
+            ? {
+                ...prev,
+                welcomeScreenCompleted: true,
+                registrationStep: 0,
+                registrationDraftFullName: "",
+                registrationDraftEmail: "",
+                loginStep: 0,
+                loginDraftEmail: "",
+                userDisplayName: displayName,
+                lastRegisteredDisplayName: displayName,
+              }
+            : prev,
+        );
+      } catch (e: unknown) {
+        const code =
+          e && typeof e === "object" && "code" in e
+            ? String((e as { code: string }).code)
+            : undefined;
+        Alert.alert("Cadastro", firebaseAuthErrorMessage(code));
+      }
+      return;
+    }
     await persistSettings.execute({
       welcomeScreenCompleted: true,
       registrationStep: 0,
@@ -402,6 +586,13 @@ export function AppRoot(): ReactElement {
 
   /** Volta da tela principal para a welcome (mantém tema e fonte já escolhidos). */
   const handleBackFromMainAppToWelcome = async () => {
+    if (useFirebaseAuth) {
+      try {
+        await firebaseSignOut();
+      } catch {
+        Alert.alert("Sessão", "Não foi possível encerrar a sessão agora.");
+      }
+    }
     await revertToWelcomeStep.execute();
     setSettings((prev) =>
       prev
@@ -512,13 +703,21 @@ export function AppRoot(): ReactElement {
         />
       );
     }
+    const displayNameMain =
+      useFirebaseAuth && authUser
+        ? authUser.displayName?.trim() ||
+          authUser.email?.split("@")[0] ||
+          settings.userDisplayName
+        : settings.userDisplayName;
+
     return (
       <MainAppScreen
-        userDisplayName={settings.userDisplayName}
+        userDisplayName={displayNameMain}
         onBack={handleBackFromMainAppToWelcome}
         onLogout={handleBackFromMainAppToWelcome}
         onUpdateThemePreference={handleUpdateThemePreference}
         onUpdateFontScale={handleUpdateFontScaleFromSettings}
+        remoteTasks={remoteTasksBridge}
       />
     );
   })();
