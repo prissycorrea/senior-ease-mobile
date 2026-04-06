@@ -53,6 +53,8 @@ type Props = {
   visible: boolean;
   onClose: () => void;
   onCreate: (title: string, subtitle: string, scheduleDate: string) => void;
+  /** Abre a tela de ajustes (ex.: ícone de engrenagem no cabeçalho). */
+  onOpenSettings?: () => void;
 };
 
 function computeScheduleDate(mode: DayMode, customDate: string): string {
@@ -92,6 +94,7 @@ export function AddTaskScreen({
   visible,
   onClose,
   onCreate,
+  onOpenSettings,
 }: Props): ReactElement {
   const insets = useSafeAreaInsets();
   const { preference, palette } = useAppTheme();
@@ -180,11 +183,15 @@ export function AddTaskScreen({
   }, [onClose]);
 
   const handleSettings = useCallback(() => {
+    if (onOpenSettings) {
+      onOpenSettings();
+      return;
+    }
     Alert.alert(
       "Configurações",
       "Em breve você poderá ajustar lembretes e preferências por aqui.",
     );
-  }, []);
+  }, [onOpenSettings]);
 
   const handleVoicePress = useCallback(() => {
     Alert.alert(
