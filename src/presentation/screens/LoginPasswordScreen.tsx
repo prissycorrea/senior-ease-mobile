@@ -22,7 +22,7 @@ import {
 } from "react-native-safe-area-context";
 
 import { SignUpFlowProgress } from "../components/SignUpFlowProgress";
-import { screenHeaderPaddingTop } from "../layout/screenHeaderPaddingTop";
+import { flowHeaderPaddingTop } from "../layout/screenHeaderPaddingTop";
 import {
   accentBlue,
   brandNavy,
@@ -134,7 +134,7 @@ export function LoginPasswordScreen({
           <View
             style={[
               styles.topBar,
-              { paddingTop: screenHeaderPaddingTop(insets.top) },
+              { paddingTop: flowHeaderPaddingTop(insets.top) },
             ]}
           >
             <Pressable

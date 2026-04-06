@@ -21,7 +21,7 @@ import {
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 
-import { screenHeaderPaddingTop } from "../layout/screenHeaderPaddingTop";
+import { flowHeaderPaddingTop } from "../layout/screenHeaderPaddingTop";
 import {
   accentBlue,
   brandNavy,
@@ -163,7 +163,7 @@ export function WelcomeScreen({
         <View
           style={[
             styles.content,
-            { paddingTop: screenHeaderPaddingTop(insets.top) },
+            { paddingTop: flowHeaderPaddingTop(insets.top) },
           ]}
         >
           <View style={styles.topBar}>

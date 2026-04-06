@@ -27,7 +27,7 @@ import {
   FONT_SCALE_MIN,
   FONT_SCALE_STEP,
 } from "../../domain/entities/fontScale";
-import { screenHeaderPaddingTop } from "../layout/screenHeaderPaddingTop";
+import { flowHeaderPaddingTop } from "../layout/screenHeaderPaddingTop";
 import {
   accentBlue,
   brandNavy,
@@ -147,7 +147,7 @@ export function FontSizeOnboardingScreen({
           <View
             style={[
               styles.topBar,
-              { paddingTop: screenHeaderPaddingTop(insets.top) },
+              { paddingTop: flowHeaderPaddingTop(insets.top) },
             ]}
           >
             <Pressable
