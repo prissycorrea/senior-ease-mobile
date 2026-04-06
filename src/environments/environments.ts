@@ -1,12 +1,3 @@
-/**
- * Configuração do Firebase para o app cliente.
- *
- * Preencha um arquivo `.env` na raiz (veja `.env.example`). O Expo injeta
- * variáveis com prefixo `EXPO_PUBLIC_` no bundle em tempo de build.
- *
- * Observação: essas chaves não substituem regras de segurança no Firebase
- * (Firestore Rules, App Check, etc.); evite commitar `.env` no Git.
- */
 function req(label: string, value: string | undefined): string {
   if (typeof value === "string" && value.trim().length > 0) {
     return value.trim();
