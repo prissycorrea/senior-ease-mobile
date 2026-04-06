@@ -1,0 +1,10 @@
+import type { ThemePreference } from "../entities/ThemePreference";
+import type { SettingsRepository } from "../repositories/SettingsRepository";
+
+export class SetThemePreferenceUseCase {
+  constructor(private readonly settingsRepository: SettingsRepository) {}
+
+  execute(theme: ThemePreference): Promise<void> {
+    return this.settingsRepository.save({ themePreference: theme });
+  }
+}
