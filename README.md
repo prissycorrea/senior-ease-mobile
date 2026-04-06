@@ -5,19 +5,30 @@ Aplicativo mobile pensado para **apoiar pessoas idosas** no dia a dia: visual co
 ### Neste documento
 
 1. [O que é o app](#o-que-é-o-app)  
-2. [Jornada no app — etapa por etapa](#jornada-no-app--etapa-por-etapa)  
-3. [Funcionalidades e público idoso](#funcionalidades-e-facilidades-público-idoso)  
-4. [Arquitetura](#arquitetura)  
-5. [Testes](#testes)  
-6. [Tecnologias](#tecnologias-utilizadas)  
-7. [Pipelines (CI/CD)](#pipelines-e-etapas-github-actions)  
-8. [Como rodar](#como-rodar-o-app)  
+2. [Firebase e versão web](#firebase-e-versão-web)  
+3. [Jornada no app — etapa por etapa](#jornada-no-app--etapa-por-etapa)  
+4. [Funcionalidades e público idoso](#funcionalidades-e-facilidades-público-idoso)  
+5. [Arquitetura](#arquitetura)  
+6. [Testes](#testes)  
+7. [Tecnologias](#tecnologias-utilizadas)  
+8. [Pipelines (CI/CD)](#pipelines-e-etapas-github-actions)  
+9. [Como rodar](#como-rodar-o-app)  
 
 ---
 
 ## O que é o app
 
 O **Senior Ease** é um protótipo de app **React Native (Expo)** que simula uma experiência completa: da primeira abertura até o uso cotidiano com **lista de atividades**, **agenda por dia**, **criação de tarefas** e **ajustes de acessibilidade**.
+
+---
+
+## Firebase e versão web
+
+O mobile usa **Firebase** (SDK JavaScript compatível com Expo): **Authentication** (login e cadastro com e-mail e senha) e **Cloud Firestore** para as tarefas, apontando para o **mesmo projeto Firebase** da **versão web** do Senior Ease.
+
+Com isso, a pessoa tem acesso às **mesmas coisas** nos dois lugares: **a mesma conta** (perfil no Auth) e a **mesma lista de tarefas** na coleção compartilhada, desde que as **regras de segurança** do Firestore e o provedor de e-mail/senha estejam habilitados no console do Firebase. O que ficar só no aparelho (por exemplo preferências de tema e tamanho da letra no `AsyncStorage`) não sincroniza com a web — só o que passa pelo Firebase.
+
+**Configuração local:** crie um arquivo `.env` na raiz (veja o modelo `.env.example`) com as variáveis `EXPO_PUBLIC_FIREBASE_*`. Esse arquivo **não** deve ser commitado no Git. Nos testes automatizados (`jest.setup.js`), o fluxo usa modo demo e variáveis fictícias; no app em desenvolvimento, use o `.env` com os valores do console Firebase.
 
 ---
 
@@ -28,11 +39,11 @@ O **Senior Ease** é um protótipo de app **React Native (Expo)** que simula uma
 | **1. Conforto visual** | Escolha entre tema padrão (cores suaves) ou **alto contraste**, com explicação clara do propósito. |
 | **2. Tamanho da letra** | Ajuste do **multiplicador de fonte** com pré-visualização; valor é salvo e aplicado em todo o app. |
 | **3. Boas-vindas** | Tela de entrada com **Criar conta** ou **Já tenho conta**. |
-| **4. Cadastro (3 passos)** | Nome → e-mail → senha e confirmação; ao concluir, entra no app com o nome cadastrado. |
-| **5. Login (2 passos)** | E-mail e senha — no protótipo há **credenciais de demonstração** (veja `src/domain/constants/demoLoginCredentials.ts`). |
+| **4. Cadastro (3 passos)** | Nome → e-mail → senha e confirmação; com **Firebase** configurado, a conta é criada na nuvem (**mesmo Auth que na web**). |
+| **5. Login (2 passos)** | E-mail e senha via **Firebase**; nos **testes** ou com `EXPO_PUBLIC_USE_FIREBASE=false`, usa-se o **login demo** em `src/domain/constants/demoLoginCredentials.ts`. |
 | **6. App principal — Início** | Lista **“Próximas atividades”**, **progresso diário**, detalhe da tarefa, **adicionar tarefa** (fluxo guiado com data/horário). |
 | **7. App principal — Agenda** | Faixa de **dias rolável** com o dia atual centralizado; lista filtrada por data; mesma linha visual da home. |
-| **8. Ajustes** | Perfil resumido, **tamanho da letra** (reabre o fluxo de ajuste), **interruptor de alto contraste**, placeholders para voz/privacidade e **Sair da conta** (volta à boas-vindas). |
+| **8. Ajustes** | Perfil resumido, **tamanho da letra** (reabre o fluxo de ajuste), **interruptor de alto contraste**, atalhos informativos (ex.: privacidade) e **Sair da conta** (volta à boas-vindas; encerra sessão no Firebase quando aplicável). |
 
 > O **voltar** na barra superior da home retorna à boas-vindas **sem** apagar tema nem tamanho da fonte já escolhidos no onboarding.
 
@@ -63,7 +74,7 @@ src/
 ```
 
 - **Domain**: regras e contratos (`AppSettings`, `ThemePreference`, use cases como persistência, bootstrap, conclusão de onboarding, logout).
-- **Data**: `AsyncStorageSettingsRepository` — leitura/gravação de configurações em JSON.
+- **Data**: `AsyncStorageSettingsRepository` (configurações locais em JSON); **Firebase** (`src/data/firebase/`) para Auth e Firestore (tarefas), alinhado à versão web.
 - **Presentation**: telas React Native, **ThemeContext** e **FontScaleContext** para tema e escala global.
 - **App (`AppRoot`)**: orquestra o estado carregado do storage e decide qual tela exibir (onboarding → welcome → main).
 
@@ -95,7 +106,8 @@ src/
 | Fontes | `@expo-google-fonts/lexend` |
 | Ícones | `@expo/vector-icons` (Ionicons) |
 | Gráficos | `react-native-svg` |
-| Persistência | `@react-native-async-storage/async-storage` |
+| Persistência local | `@react-native-async-storage/async-storage` |
+| Backend | [Firebase](https://firebase.google.com/) (Auth e Firestore; mesmo projeto que a versão web) |
 | Área segura / layout | `react-native-safe-area-context` |
 | Qualidade | ESLint (`eslint-config-expo`) |
 
@@ -151,6 +163,8 @@ cd senior-ease-mobile
 npm ci
 ```
 
+Copie `.env.example` para `.env` e preencha as variáveis `EXPO_PUBLIC_FIREBASE_*` com os dados do **Firebase Console** (mesmo projeto usado na web). Sem o `.env`, o app falha ao inicializar o Firebase.
+
 ### Desenvolvimento
 
 ```bash
@@ -170,6 +184,8 @@ Abre o **Expo Dev Tools**. Escaneie o QR code com o Expo Go (Android/iOS) ou pre
 
 ### Login de demonstração
 
-No fluxo **Já tenho conta**, use as credenciais definidas em `src/domain/constants/demoLoginCredentials.ts` (e-mail e senha de demo). Após um cadastro bem-sucedido, o login demo pode exibir o **último nome cadastrado** na home.
+Com **Firebase** ativo (padrão fora dos testes), o login e o cadastro são **reais** e refletem na **versão web** a mesma conta e as mesmas tarefas no Firestore.
+
+Nos **testes** (e se `EXPO_PUBLIC_USE_FIREBASE=false`), o fluxo **Já tenho conta** usa as credenciais de `src/domain/constants/demoLoginCredentials.ts`. Após um cadastro nesse modo demo, o login demo pode exibir o **último nome cadastrado** na home.
 
 ---

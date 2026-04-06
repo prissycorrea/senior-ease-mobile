@@ -31,6 +31,24 @@ import { useFontScaleMultiplier } from "../theme/FontScaleContext";
 import { useAppTheme } from "../theme/ThemeContext";
 import type { HomeActivity } from "../types/homeActivity";
 import { addDays, localISODate } from "../utils/agendaDates";
+
+/** Quando definido, tarefas vêm do Firestore (mesma coleção `tasks` da web). */
+export type MainAppRemoteTasks = {
+  activities: HomeActivity[];
+  createTask: (
+    title: string,
+    subtitle: string,
+    scheduleDate: string,
+    periodIso: string,
+  ) => void | Promise<void>;
+  saveTask: (
+    previous: HomeActivity,
+    title: string,
+    subtitle: string,
+  ) => void | Promise<void>;
+  toggleDone: (id: string) => void | Promise<void>;
+  deleteTask: (id: string) => void | Promise<void>;
+};
 import { AddTaskScreen } from "./AddTaskScreen";
 import { AgendaScreen } from "./AgendaScreen";
 import { FontSizeOnboardingScreen } from "./FontSizeOnboardingScreen";
@@ -52,6 +70,7 @@ type Props = {
   onLogout: () => Promise<void>;
   onUpdateThemePreference: (preference: ThemePreference) => Promise<void>;
   onUpdateFontScale: (multiplier: number) => Promise<void>;
+  remoteTasks?: MainAppRemoteTasks;
 };
 
 function createSeedActivities(): HomeActivity[] {
@@ -165,6 +184,7 @@ export function MainAppScreen({
   onLogout,
   onUpdateThemePreference,
   onUpdateFontScale,
+  remoteTasks,
 }: Props): ReactElement {
   const insets = useSafeAreaInsets();
   const { preference, palette } = useAppTheme();
@@ -176,7 +196,10 @@ export function MainAppScreen({
   const fontBold = fontsLoaded ? LEXEND_BOLD : undefined;
   const fontRegular = fontsLoaded ? LEXEND_REGULAR : undefined;
   const [backing, setBacking] = useState(false);
-  const [activities, setActivities] = useState<HomeActivity[]>(createSeedActivities);
+  const [localActivities, setLocalActivities] = useState<HomeActivity[]>(
+    createSeedActivities,
+  );
+  const activities = remoteTasks?.activities ?? localActivities;
   const [detailTaskId, setDetailTaskId] = useState<string | null>(null);
   const [addTaskVisible, setAddTaskVisible] = useState(false);
   const [mainTab, setMainTab] = useState<"home" | "agenda">("home");
@@ -286,16 +309,25 @@ export function MainAppScreen({
   }, []);
 
   const handleCreateTask = useCallback(
-    (title: string, subtitle: string, scheduleDate: string) => {
+    (
+      title: string,
+      subtitle: string,
+      scheduleDate: string,
+      periodIso: string,
+    ) => {
+      if (remoteTasks) {
+        void remoteTasks.createTask(title, subtitle, scheduleDate, periodIso);
+        return;
+      }
       const sub =
         subtitle.trim().length > 0 ? subtitle.trim() : "Sem horário definido";
       const id = `task-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-      setActivities((prev) => [
+      setLocalActivities((prev) => [
         ...prev,
         { id, title, subtitle: sub, done: false, scheduleDate },
       ]);
     },
-    [],
+    [remoteTasks],
   );
 
   const handleAgenda = useCallback(() => {
@@ -316,23 +348,42 @@ export function MainAppScreen({
 
   const handleTaskSave = useCallback(
     (id: string, title: string, subtitle: string) => {
-      setActivities((prev) =>
+      if (remoteTasks) {
+        const prev = activities.find((a) => a.id === id);
+        if (prev) void remoteTasks.saveTask(prev, title, subtitle);
+        return;
+      }
+      setLocalActivities((prev) =>
         prev.map((a) => (a.id === id ? { ...a, title, subtitle } : a)),
       );
     },
-    [],
+    [activities, remoteTasks],
   );
 
-  const handleTaskToggleDone = useCallback((id: string) => {
-    setActivities((prev) =>
-      prev.map((a) => (a.id === id ? { ...a, done: !a.done } : a)),
-    );
-  }, []);
+  const handleTaskToggleDone = useCallback(
+    (id: string) => {
+      if (remoteTasks) {
+        void remoteTasks.toggleDone(id);
+        return;
+      }
+      setLocalActivities((prev) =>
+        prev.map((a) => (a.id === id ? { ...a, done: !a.done } : a)),
+      );
+    },
+    [remoteTasks],
+  );
 
-  const handleTaskDelete = useCallback((id: string) => {
-    setActivities((prev) => prev.filter((a) => a.id !== id));
-    setDetailTaskId(null);
-  }, []);
+  const handleTaskDelete = useCallback(
+    (id: string) => {
+      if (remoteTasks) {
+        void remoteTasks.deleteTask(id);
+      } else {
+        setLocalActivities((prev) => prev.filter((a) => a.id !== id));
+      }
+      setDetailTaskId(null);
+    },
+    [remoteTasks],
+  );
 
   return (
     <View

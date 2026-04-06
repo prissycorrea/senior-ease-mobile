@@ -39,13 +39,10 @@ const TITLE_LINE = 42;
 const TITLE_LH = 48;
 const BODY_BASE = 16;
 const INPUT_BASE = 17;
-const BTN_LABEL_BASE = 17;
 const NEXT_BASE = 17;
-const MIC_BASE = 22;
 
 const TOP_TINT_DEFAULT = "#DCE8F2";
 const INPUT_BG_DEFAULT = "#E8EEF4";
-const VOICE_BG_DEFAULT = "rgba(0, 86, 179, 0.14)";
 
 function isPlausibleEmail(raw: string): boolean {
   const s = raw.trim();
@@ -92,21 +89,13 @@ export function CreateAccountEmailScreen({
   const inputBg = isDefault ? INPUT_BG_DEFAULT : "#001B3D";
   const inputBorder = isDefault ? "#B8D4E8" : palette.border;
   const placeholderColor = isDefault ? "#8FA3B3" : "rgba(255,255,255,0.45)";
-  const voiceBg = isDefault ? VOICE_BG_DEFAULT : "rgba(84, 166, 255, 0.2)";
-  const voiceIconColor = isDefault ? brandNavy : highContrastActionBlue;
-  const voiceTextColor = isDefault ? brandNavy : palette.text;
   const iconMuted = isDefault ? "#A8B8C8" : "rgba(255,255,255,0.4)";
 
   const titleSize = Math.min(48, Math.max(28, Math.round(TITLE_LINE * scale)));
   const titleLh = Math.min(54, Math.max(32, Math.round(TITLE_LH * scale)));
   const bodySize = Math.min(22, Math.max(14, Math.round(BODY_BASE * scale)));
   const inputSize = Math.min(24, Math.max(15, Math.round(INPUT_BASE * scale)));
-  const btnLabelSize = Math.min(
-    20,
-    Math.max(14, Math.round(BTN_LABEL_BASE * scale)),
-  );
   const nextSize = Math.min(22, Math.max(15, Math.round(NEXT_BASE * scale)));
-  const micSize = Math.min(28, Math.max(18, Math.round(MIC_BASE * scale)));
   const iconSize = Math.min(26, Math.max(20, Math.round(22 * scale)));
   const nextMinH = Math.min(120, Math.max(52, Math.round(56 * scale)));
   const nextPadV = Math.min(22, Math.max(14, Math.round(17 * scale)));
@@ -141,14 +130,6 @@ export function CreateAccountEmailScreen({
       setSubmitting(false);
     }
   }, [canNext, email, onNext, submitting]);
-
-  const handleVoicePress = useCallback(() => {
-    Alert.alert(
-      "Voz",
-      "Em breve você poderá ditar o e-mail por aqui.",
-      [{ text: "OK" }],
-    );
-  }, []);
 
   const handlePrivacyIconPress = useCallback(() => {
     Alert.alert(
@@ -254,7 +235,7 @@ export function CreateAccountEmailScreen({
                 marginBottom: 20,
               }}
             >
-              Digite ou use a sua voz para informar o seu e-mail.
+              Digite o seu e-mail.
             </Text>
 
             <View
@@ -305,36 +286,6 @@ export function CreateAccountEmailScreen({
                 />
               </Pressable>
             </View>
-
-            <View style={{ height: 16 }} />
-
-            <Pressable
-              testID="sign-up-email-voice-button"
-              onPress={handleVoicePress}
-              style={({ pressed }) => [
-                styles.voiceButton,
-                {
-                  backgroundColor: voiceBg,
-                  minHeight: inputMinH,
-                  opacity: pressed ? 0.9 : 1,
-                },
-              ]}
-              accessibilityRole="button"
-              accessibilityLabel="Ou use a voz tocando aqui"
-            >
-              <Ionicons name="mic" size={micSize} color={voiceIconColor} />
-              <Text
-                style={{
-                  fontFamily: fontBold,
-                  fontSize: btnLabelSize,
-                  color: voiceTextColor,
-                  flex: 1,
-                  textAlign: "center",
-                }}
-              >
-                Ou use a voz tocando aqui
-              </Text>
-            </Pressable>
           </ScrollView>
         </View>
 
@@ -456,14 +407,6 @@ const styles = StyleSheet.create({
     padding: 8,
     justifyContent: "center",
     alignItems: "center",
-  },
-  voiceButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 12,
-    borderRadius: 999,
-    paddingHorizontal: 20,
   },
   footerBar: {
     paddingHorizontal: 28,

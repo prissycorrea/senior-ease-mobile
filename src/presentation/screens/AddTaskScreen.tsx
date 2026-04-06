@@ -38,7 +38,6 @@ const LEXEND_REGULAR = "Lexend_400Regular";
 
 const TOP_TINT_DEFAULT = "#F1F4F7";
 const INPUT_BG_DEFAULT = "#E8EEF4";
-const VOICE_BG_DEFAULT = "rgba(0, 86, 179, 0.14)";
 const ICON_CIRCLE_DEFAULT = "rgba(0, 86, 179, 0.12)";
 
 /** Tela de sucesso pós-criação (tema claro). */
@@ -52,7 +51,15 @@ type FlowPhase = "wizard" | "success";
 type Props = {
   visible: boolean;
   onClose: () => void;
-  onCreate: (title: string, subtitle: string, scheduleDate: string) => void;
+  /**
+   * `periodIso` é o mesmo campo `period` usado no Firestore (web).
+   */
+  onCreate: (
+    title: string,
+    subtitle: string,
+    scheduleDate: string,
+    periodIso: string,
+  ) => void;
   /** Abre a tela de ajustes (ex.: ícone de engrenagem no cabeçalho). */
   onOpenSettings?: () => void;
 };
@@ -63,6 +70,27 @@ function computeScheduleDate(mode: DayMode, customDate: string): string {
   if (mode === "tomorrow") return localISODate(addDays(now, 1));
   const parsed = parseBRDateToISO(customDate.trim(), now.getFullYear());
   return parsed ?? localISODate(now);
+}
+
+/** Valor ISO para o campo `period` no Firestore (alinhado à web). */
+function buildPeriodIso(
+  dayMode: DayMode,
+  customDate: string,
+  timeText: string,
+): string {
+  const scheduleDate = computeScheduleDate(dayMode, customDate);
+  const [y, m, d] = scheduleDate.split("-").map(Number);
+  const base = new Date(y, m - 1, d);
+  const t = timeText.trim();
+  const match = t.match(/(\d{1,2})\s*[:h]\s*(\d{2})/i);
+  let h = 12;
+  let min = 0;
+  if (match) {
+    h = Math.min(23, Math.max(0, parseInt(match[1], 10)));
+    min = Math.min(59, Math.max(0, parseInt(match[2], 10)));
+  }
+  base.setHours(h, min, 0, 0);
+  return base.toISOString();
 }
 
 function formatSubtitle(
@@ -125,9 +153,6 @@ export function AddTaskScreen({
   const inputBg = isDefault ? INPUT_BG_DEFAULT : "#001B3D";
   const inputBorder = isDefault ? "#B8D4E8" : palette.border;
   const placeholderColor = isDefault ? "#8FA3B3" : "rgba(255,255,255,0.45)";
-  const voiceBg = isDefault ? VOICE_BG_DEFAULT : "rgba(84, 166, 255, 0.2)";
-  const voiceIconColor = isDefault ? brandNavy : highContrastActionBlue;
-  const voiceTextColor = isDefault ? brandNavy : palette.text;
   const iconCircleBg = isDefault ? ICON_CIRCLE_DEFAULT : "rgba(84, 166, 255, 0.2)";
   const pillBorder = isDefault ? "#C9D5DE" : palette.border;
   const primaryBtnBg = isDefault ? brandNavy : palette.primary;
@@ -139,7 +164,6 @@ export function AddTaskScreen({
   const bodySize = Math.min(18, Math.max(14, Math.round(16 * scale)));
   const inputSize = Math.min(20, Math.max(15, Math.round(17 * scale)));
   const btnLabelSize = Math.min(20, Math.max(15, Math.round(17 * scale)));
-  const micSize = Math.min(26, Math.max(18, Math.round(22 * scale)));
   const inputMinH = Math.min(72, Math.max(52, Math.round(56 * scale)));
   const nextMinH = Math.min(120, Math.max(52, Math.round(56 * scale)));
   const nextPadV = Math.min(22, Math.max(14, Math.round(17 * scale)));
@@ -193,14 +217,6 @@ export function AddTaskScreen({
     );
   }, [onOpenSettings]);
 
-  const handleVoicePress = useCallback(() => {
-    Alert.alert(
-      "Voz",
-      "Em breve você poderá ditar a tarefa por aqui.",
-      [{ text: "OK" }],
-    );
-  }, []);
-
   const handleStep1Next = useCallback(() => {
     const t = title.trim();
     if (t.length < 1) {
@@ -225,7 +241,8 @@ export function AddTaskScreen({
     }
     const sub = formatSubtitle(dayMode, customDate, timeText, remindOn);
     const scheduleDate = computeScheduleDate(dayMode, customDate);
-    onCreate(t, sub, scheduleDate);
+    const periodIso = buildPeriodIso(dayMode, customDate, timeText);
+    onCreate(t, sub, scheduleDate, periodIso);
     setFlowPhase("success");
   }, [customDate, dayMode, onCreate, remindOn, timeText, title]);
 
@@ -544,7 +561,7 @@ export function AddTaskScreen({
                       marginBottom: 20,
                     }}
                   >
-                    Digite ou fale a sua nova tarefa
+                    Digite a sua nova tarefa
                   </Text>
                   <TextInput
                     testID="add-task-title-input"
@@ -567,33 +584,6 @@ export function AddTaskScreen({
                     }}
                     accessibilityLabel="Descrição da nova tarefa"
                   />
-                  <Pressable
-                    testID="add-task-voice-button"
-                    onPress={handleVoicePress}
-                    style={({ pressed }) => [
-                      styles.voiceButton,
-                      {
-                        backgroundColor: voiceBg,
-                        minHeight: inputMinH,
-                        opacity: pressed ? 0.9 : 1,
-                      },
-                    ]}
-                    accessibilityRole="button"
-                    accessibilityLabel="Ou use a voz tocando aqui"
-                  >
-                    <Ionicons name="mic" size={micSize} color={voiceIconColor} />
-                    <Text
-                      style={{
-                        fontFamily: fontBold,
-                        fontSize: btnLabelSize,
-                        color: voiceTextColor,
-                        flex: 1,
-                        textAlign: "center",
-                      }}
-                    >
-                      Ou use a voz tocando aqui
-                    </Text>
-                  </Pressable>
                 </>
               ) : (
                 <>
@@ -1010,14 +1000,6 @@ const styles = StyleSheet.create({
     paddingTop: 28,
     paddingBottom: 16,
     flexGrow: 1,
-  },
-  voiceButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 12,
-    borderRadius: 999,
-    paddingHorizontal: 20,
   },
   dayPillRow: {
     flexDirection: "row",
