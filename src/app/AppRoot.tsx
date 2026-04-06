@@ -419,6 +419,21 @@ export function AppRoot(): ReactElement {
     );
   };
 
+  const handleUpdateThemePreference = async (next: ThemePreference) => {
+    await persistSettings.execute({ themePreference: next });
+    setSettings((prev) =>
+      prev ? { ...prev, themePreference: next } : prev,
+    );
+  };
+
+  const handleUpdateFontScaleFromSettings = async (multiplier: number) => {
+    const clamped = clampFontScale(multiplier);
+    await persistSettings.execute({ fontScaleMultiplier: clamped });
+    setSettings((prev) =>
+      prev ? { ...prev, fontScaleMultiplier: clamped } : prev,
+    );
+  };
+
   const onboardingBody = (() => {
     if (!settings.visualOnboardingCompleted) {
       return (
@@ -501,6 +516,9 @@ export function AppRoot(): ReactElement {
       <MainAppScreen
         userDisplayName={settings.userDisplayName}
         onBack={handleBackFromMainAppToWelcome}
+        onLogout={handleBackFromMainAppToWelcome}
+        onUpdateThemePreference={handleUpdateThemePreference}
+        onUpdateFontScale={handleUpdateFontScaleFromSettings}
       />
     );
   })();

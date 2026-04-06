@@ -8,7 +8,6 @@ import * as SystemUI from "expo-system-ui";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useMemo, useState, type ReactElement } from "react";
 import {
-  Alert,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -21,6 +20,7 @@ import {
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 
+import type { ThemePreference } from "../../domain/entities/ThemePreference";
 import { screenHeaderPaddingTop } from "../layout/screenHeaderPaddingTop";
 import {
   accentBlue,
@@ -33,6 +33,8 @@ import type { HomeActivity } from "../types/homeActivity";
 import { addDays, localISODate } from "../utils/agendaDates";
 import { AddTaskScreen } from "./AddTaskScreen";
 import { AgendaScreen } from "./AgendaScreen";
+import { FontSizeOnboardingScreen } from "./FontSizeOnboardingScreen";
+import { SettingsScreen } from "./SettingsScreen";
 import { TaskDetailScreen } from "./TaskDetailScreen";
 
 const LEXEND_BOLD = "Lexend_700Bold";
@@ -47,6 +49,9 @@ const COMPLETED_GREEN_HC = "#69F0AE";
 type Props = {
   userDisplayName: string;
   onBack: () => Promise<void>;
+  onLogout: () => Promise<void>;
+  onUpdateThemePreference: (preference: ThemePreference) => Promise<void>;
+  onUpdateFontScale: (multiplier: number) => Promise<void>;
 };
 
 function createSeedActivities(): HomeActivity[] {
@@ -154,7 +159,13 @@ function DailyProgressRing({
   );
 }
 
-export function MainAppScreen({ userDisplayName, onBack }: Props): ReactElement {
+export function MainAppScreen({
+  userDisplayName,
+  onBack,
+  onLogout,
+  onUpdateThemePreference,
+  onUpdateFontScale,
+}: Props): ReactElement {
   const insets = useSafeAreaInsets();
   const { preference, palette } = useAppTheme();
   const scale = useFontScaleMultiplier();
@@ -169,6 +180,9 @@ export function MainAppScreen({ userDisplayName, onBack }: Props): ReactElement 
   const [detailTaskId, setDetailTaskId] = useState<string | null>(null);
   const [addTaskVisible, setAddTaskVisible] = useState(false);
   const [mainTab, setMainTab] = useState<"home" | "agenda">("home");
+  const [mainOverlay, setMainOverlay] = useState<
+    "none" | "settings" | "fontSize"
+  >("none");
 
   const isDefault = preference === "default";
   const displayName =
@@ -235,7 +249,32 @@ export function MainAppScreen({ userDisplayName, onBack }: Props): ReactElement 
   }, [backing, onBack]);
 
   const handleSettings = useCallback(() => {
-    Alert.alert("Configurações", "Em breve você poderá ajustar o app por aqui.");
+    setMainOverlay("settings");
+  }, []);
+
+  const handleSettingsBack = useCallback(() => {
+    setMainOverlay("none");
+  }, []);
+
+  const handleOpenFontSizeFromSettings = useCallback(() => {
+    setMainOverlay("fontSize");
+  }, []);
+
+  const handleFontSizeFromSettingsComplete = useCallback(
+    async (multiplier: number) => {
+      await onUpdateFontScale(multiplier);
+      setMainOverlay("settings");
+    },
+    [onUpdateFontScale],
+  );
+
+  const handleFontSizeFromSettingsBack = useCallback(async () => {
+    setMainOverlay("settings");
+  }, []);
+
+  const handleOpenSettingsFromAddTask = useCallback(() => {
+    setAddTaskVisible(false);
+    setMainOverlay("settings");
   }, []);
 
   const handleAddTask = useCallback(() => {
@@ -297,10 +336,28 @@ export function MainAppScreen({ userDisplayName, onBack }: Props): ReactElement 
 
   return (
     <View
-      testID={mainTab === "home" ? "home-screen" : "agenda-screen"}
+      {...(mainOverlay === "none"
+        ? { testID: mainTab === "home" ? "home-screen" : "agenda-screen" }
+        : {})}
       style={[styles.root, { backgroundColor: palette.background }]}
     >
-      <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
+      {mainOverlay === "fontSize" ? (
+        <FontSizeOnboardingScreen
+          themePreference={preference}
+          initialFontScaleMultiplier={scale}
+          onComplete={handleFontSizeFromSettingsComplete}
+          onBack={handleFontSizeFromSettingsBack}
+        />
+      ) : mainOverlay === "settings" ? (
+        <SettingsScreen
+          userDisplayName={displayName}
+          onBack={handleSettingsBack}
+          onFontSize={handleOpenFontSizeFromSettings}
+          onUpdateThemePreference={onUpdateThemePreference}
+          onLogout={onLogout}
+        />
+      ) : (
+        <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
         {mainTab === "home" ? (
           <>
         <View
@@ -656,8 +713,11 @@ export function MainAppScreen({ userDisplayName, onBack }: Props): ReactElement 
             </Pressable>
           </View>
         </View>
-      </SafeAreaView>
-      <StatusBar style={preference === "high_contrast" ? "light" : "dark"} />
+        </SafeAreaView>
+      )}
+      {mainOverlay === "none" ? (
+        <StatusBar style={preference === "high_contrast" ? "light" : "dark"} />
+      ) : null}
       <TaskDetailScreen
         visible={detailTaskId !== null}
         task={detailTask}
@@ -670,6 +730,7 @@ export function MainAppScreen({ userDisplayName, onBack }: Props): ReactElement 
         visible={addTaskVisible}
         onClose={handleAddTaskClose}
         onCreate={handleCreateTask}
+        onOpenSettings={handleOpenSettingsFromAddTask}
       />
     </View>
   );
