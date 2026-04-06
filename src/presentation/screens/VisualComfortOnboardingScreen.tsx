@@ -21,7 +21,7 @@ import {
 } from "react-native-safe-area-context";
 
 import type { ThemePreference } from "../../domain/entities/ThemePreference";
-import { screenHeaderPaddingTop } from "../layout/screenHeaderPaddingTop";
+import { flowHeaderPaddingTop } from "../layout/screenHeaderPaddingTop";
 import {
   accentBlue,
   brandNavy,
@@ -140,7 +140,7 @@ export function VisualComfortOnboardingScreen({
           <View
             style={[
               styles.progressWrap,
-              { paddingTop: screenHeaderPaddingTop(insets.top) },
+              { paddingTop: flowHeaderPaddingTop(insets.top) },
             ]}
           >
             <View style={styles.progressRow}>
