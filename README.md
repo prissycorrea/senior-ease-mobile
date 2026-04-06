@@ -40,7 +40,7 @@ Com isso, a pessoa tem acesso às **mesmas coisas** nos dois lugares: **a mesma 
 | **2. Tamanho da letra** | Ajuste do **multiplicador de fonte** com pré-visualização; valor é salvo e aplicado em todo o app. |
 | **3. Boas-vindas** | Tela de entrada com **Criar conta** ou **Já tenho conta**. |
 | **4. Cadastro (3 passos)** | Nome → e-mail → senha e confirmação; com **Firebase** configurado, a conta é criada na nuvem (**mesmo Auth que na web**). |
-| **5. Login (2 passos)** | E-mail e senha via **Firebase**; nos **testes** ou com `EXPO_PUBLIC_USE_FIREBASE=false`, usa-se o **login demo** em `src/domain/constants/demoLoginCredentials.ts`. |
+| **5. Login (2 passos)** | E-mail e senha via **Firebase**; |
 | **6. App principal — Início** | Lista **“Próximas atividades”**, **progresso diário**, detalhe da tarefa, **adicionar tarefa** (fluxo guiado com data/horário). |
 | **7. App principal — Agenda** | Faixa de **dias rolável** com o dia atual centralizado; lista filtrada por data; mesma linha visual da home. |
 | **8. Ajustes** | Perfil resumido, **tamanho da letra** (reabre o fluxo de ajuste), **interruptor de alto contraste**, atalhos informativos (ex.: privacidade) e **Sair da conta** (volta à boas-vindas; encerra sessão no Firebase quando aplicável). |
@@ -186,6 +186,6 @@ Abre o **Expo Dev Tools**. Escaneie o QR code com o Expo Go (Android/iOS) ou pre
 
 Com **Firebase** ativo (padrão fora dos testes), o login e o cadastro são **reais** e refletem na **versão web** a mesma conta e as mesmas tarefas no Firestore.
 
-Nos **testes** (e se `EXPO_PUBLIC_USE_FIREBASE=false`), o fluxo **Já tenho conta** usa as credenciais de `src/domain/constants/demoLoginCredentials.ts`. Após um cadastro nesse modo demo, o login demo pode exibir o **último nome cadastrado** na home.
+Nos **testes** (e se `EXPO_PUBLIC_USE_FIREBASE=false`), o fluxo **Já tenho conta** usa as credenciais de `src/domain/constants/demoLoginCredentials.ts`.
 
 ---
