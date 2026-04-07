@@ -3,6 +3,7 @@ import {
   Lexend_700Bold,
   useFonts,
 } from "@expo-google-fonts/lexend";
+import { Unbounded_700Bold } from "@expo-google-fonts/unbounded";
 import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import * as SystemUI from "expo-system-ui";
@@ -32,6 +33,7 @@ import { useAppTheme } from "../theme/ThemeContext";
 
 const LEXEND_BOLD = "Lexend_700Bold";
 const LEXEND_REGULAR = "Lexend_400Regular";
+const UNBOUNDED_BOLD = "Unbounded_700Bold";
 
 const LOGO_BASE = 34;
 const BUTTON_LABEL_BASE = 17;
@@ -62,6 +64,7 @@ export function WelcomeScreen({
   const [fontsLoaded] = useFonts({
     Lexend_400Regular,
     Lexend_700Bold,
+    Unbounded_700Bold,
   });
   const [busy, setBusy] = useState(false);
   const [backing, setBacking] = useState(false);
@@ -70,7 +73,7 @@ export function WelcomeScreen({
   const logoSeniorColor = isDefault ? brandNavy : "#FFFFFF";
   const logoEaseColor = isDefault ? accentBlue : highContrastActionBlue;
 
-  const logoSize = Math.min(48, Math.max(26, Math.round(LOGO_BASE * scale)));
+  const logoSize = 40; // Tamanho fixo para a logo
   const buttonLabelSize = Math.min(
     26,
     Math.max(14, Math.round(BUTTON_LABEL_BASE * scale)),
@@ -199,7 +202,7 @@ export function WelcomeScreen({
               style={[
                 styles.logoText,
                 {
-                  fontFamily: LEXEND_BOLD,
+                  fontFamily: UNBOUNDED_BOLD,
                   fontSize: logoSize,
                   lineHeight: logoSize * 1.08,
                   color: logoSeniorColor,
@@ -212,7 +215,7 @@ export function WelcomeScreen({
               style={[
                 styles.logoText,
                 {
-                  fontFamily: LEXEND_BOLD,
+                  fontFamily: UNBOUNDED_BOLD,
                   fontSize: logoSize,
                   lineHeight: logoSize * 1.08,
                   color: logoEaseColor,
@@ -391,6 +394,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "baseline",
     gap: 0,
+    marginTop: 140, // Empurra a logo para baixo
   },
   logoText: {
     letterSpacing: -0.8,
