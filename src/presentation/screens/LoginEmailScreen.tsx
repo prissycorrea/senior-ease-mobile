@@ -243,7 +243,7 @@ export function LoginEmailScreen({
                 styles.inputShell,
                 {
                   backgroundColor: inputBg,
-                  borderColor: inputBorder,
+                  borderColor: email.length > 0 && !canNext ? "#B91C1C" : inputBorder,
                   minHeight: inputMinH,
                 },
               ]}
@@ -286,6 +286,21 @@ export function LoginEmailScreen({
                 />
               </Pressable>
             </View>
+
+            {email.length > 0 && !canNext && (
+              <Text
+                style={{
+                  fontFamily: fontRegular,
+                  fontSize: Math.min(18, Math.max(12, Math.round(14 * scale))),
+                  color: "#B91C1C",
+                  marginTop: 6,
+                  marginBottom: 12,
+                  paddingHorizontal: 16,
+                }}
+              >
+                Por favor, insira um e-mail válido.
+              </Text>
+            )}
           </ScrollView>
         </View>
 
