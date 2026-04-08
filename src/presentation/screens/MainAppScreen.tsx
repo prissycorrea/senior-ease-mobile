@@ -56,6 +56,7 @@ import { FontSizeOnboardingScreen } from "./FontSizeOnboardingScreen";
 import { SettingsScreen } from "./SettingsScreen";
 import { TaskDetailScreen } from "./TaskDetailScreen";
 import { DashboardHeader } from "../components/DashboardHeader";
+import { BottomNavigation } from "../components/BottomNavigation";
 
 const LEXEND_BOLD = "Lexend_700Bold";
 const LEXEND_REGULAR = "Lexend_400Regular";
@@ -664,97 +665,14 @@ export function MainAppScreen({
           />
         )}
 
-        <View
-          style={[
-            styles.bottomDock,
-            {
-              paddingBottom: 12 + insets.bottom,
-              backgroundColor: palette.background,
-            },
-          ]}
-        >
-          <View style={styles.bottomInner}>
-            <View
-              style={[
-                styles.navPill,
-                {
-                  backgroundColor: navPillBg,
-                  borderWidth: isDefault ? 0 : 1,
-                  borderColor: palette.border,
-                },
-              ]}
-            >
-              <Pressable
-                onPress={handleOpenHomeTab}
-                style={styles.navItem}
-                accessibilityRole="button"
-                accessibilityLabel="Início"
-              >
-                <Ionicons
-                  name="home"
-                  size={24}
-                  color={mainTab === "home" ? ringActive : palette.textMuted}
-                />
-                <Text
-                  style={{
-                    fontFamily: mainTab === "home" ? fontBold : fontRegular,
-                    fontSize: bottomNavLabel,
-                    color: mainTab === "home" ? ringActive : palette.textMuted,
-                    marginTop: 4,
-                  }}
-                >
-                  Início
-                </Text>
-              </Pressable>
-              <Pressable
-                onPress={handleAgenda}
-                style={styles.navItem}
-                accessibilityRole="button"
-                accessibilityLabel="Agenda"
-              >
-                <Ionicons
-                  name="calendar-outline"
-                  size={24}
-                  color={mainTab === "agenda" ? ringActive : palette.textMuted}
-                />
-                <Text
-                  style={{
-                    fontFamily: mainTab === "agenda" ? fontBold : fontRegular,
-                    fontSize: bottomNavLabel,
-                    color: mainTab === "agenda" ? ringActive : palette.textMuted,
-                    marginTop: 4,
-                  }}
-                >
-                  Agenda
-                </Text>
-              </Pressable>
-            </View>
-
-            <Pressable
-              testID="home-add-task"
-              onPress={handleAddTask}
-              style={({ pressed }) => [
-                styles.addButton,
-                {
-                  backgroundColor: isDefault ? brandNavy : palette.primary,
-                  opacity: pressed ? 0.92 : 1,
-                },
-              ]}
-              accessibilityRole="button"
-              accessibilityLabel="Adicionar tarefa"
-            >
-              <Text
-                style={{
-                  fontFamily: fontBold,
-                  fontSize: addTaskSize,
-                  color: isDefault ? "#FFFFFF" : palette.onPrimary,
-                }}
-              >
-                Adicionar Tarefa
-              </Text>
-            </Pressable>
-          </View>
-        </View>
+        <BottomNavigation
+          activeTab={mainTab}
+          onTabPress={(tab) => {
+            if (tab === "home") handleOpenHomeTab();
+            else handleAgenda();
+          }}
+          onAddPress={handleAddTask}
+        />
         </SafeAreaView>
       )}
       {mainOverlay === "none" ? (

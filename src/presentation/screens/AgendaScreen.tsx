@@ -153,75 +153,71 @@ export function AgendaScreen({
   );
 
   return (
-    <View style={styles.flex}>
-      <DashboardHeader
-        displayName={displayName}
-        onSettings={onSettings}
-        testID="agenda-dashboard-header"
-      />
+    <View style={[styles.flex, { backgroundColor: palette.background }]}>
+      {/* Top area - Fixed */}
+      <View style={styles.fixedTop}>
+        <DashboardHeader
+          displayName={displayName}
+          onSettings={onSettings}
+          testID="agenda-dashboard-header"
+        />
+        <View style={styles.titleInfo}>
+          <Text
+            style={{
+              fontFamily: fontBold,
+              fontSize: agendaTitleSize,
+              lineHeight: agendaTitleSize * 1.05,
+              letterSpacing: -0.5,
+              color: agendaTitleColor,
+              marginTop: 10,
+            }}
+          >
+            Agenda
+          </Text>
+          <Text
+            style={{
+              fontFamily: fontRegular,
+              fontSize: dateLineSize,
+              lineHeight: dateLineSize * 1.35,
+              color: palette.text,
+              marginTop: 4,
+            }}
+          >
+            {longDateLabel}
+          </Text>
+        </View>
+      </View>
 
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingBottom: 28 + insets.bottom + 88 },
+      {/* Main content sheet - Sliding internally if needed */}
+      <View
+        style={[
+          styles.agendaSheet,
+          {
+            backgroundColor: cardBg,
+            borderWidth: isDefault ? 0 : 1,
+            borderColor: palette.border,
+            ...(isDefault
+              ? {
+                  shadowColor: "#000",
+                  shadowOffset: { width: 0, height: -2 },
+                  shadowOpacity: 0.08,
+                  shadowRadius: 8,
+                  elevation: 5,
+                }
+              : {}),
+          },
         ]}
-        showsVerticalScrollIndicator={false}
       >
-        <Text
-          style={{
-            fontFamily: fontBold,
-            fontSize: agendaTitleSize,
-            lineHeight: agendaTitleSize * 1.05,
-            letterSpacing: -0.5,
-            color: agendaTitleColor,
-            marginTop: 10,
-            marginBottom: 10,
-          }}
-        >
-          Agenda
-        </Text>
-        <Text
-          style={{
-            fontFamily: fontRegular,
-            fontSize: dateLineSize,
-            lineHeight: dateLineSize * 1.35,
-            color: palette.text,
-            marginBottom: 16,
-          }}
-        >
-          {longDateLabel}
-        </Text>
-
-        <View
-          style={[
-            styles.agendaSheet,
-            {
-              backgroundColor: cardBg,
-              borderWidth: isDefault ? 0 : 1,
-              borderColor: palette.border,
-              ...(isDefault
-                ? {
-                    shadowColor: "#000",
-                    shadowOffset: { width: 0, height: 2 },
-                    shadowOpacity: 0.06,
-                    shadowRadius: 10,
-                    elevation: 3,
-                  }
-                : {}),
-            },
-          ]}
-        >
+        <View style={styles.dayStripContainer}>
           <ScrollView
             ref={dayStripScrollRef}
             horizontal
-            nestedScrollEnabled
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={[
               styles.dayStripContent,
               {
-                paddingLeft: dayStripHorizontalPad,
-                paddingRight: dayStripHorizontalPad,
+                paddingLeft: dayStripHorizontalPad + 20,
+                paddingRight: dayStripHorizontalPad + 20,
               },
             ]}
             onLayout={(e) => {
@@ -271,13 +267,11 @@ export function AgendaScreen({
                     style={{
                       fontFamily: fontBold,
                       fontSize: dayPillWeekSize,
-                      lineHeight: dayPillWeekSize * 1.2,
                       color: selected
                         ? isDefault
                           ? "#FFFFFF"
                           : palette.onPrimary
                         : palette.text,
-                      opacity: selected ? 1 : 0.85,
                     }}
                   >
                     {d.weekShort}
@@ -286,7 +280,6 @@ export function AgendaScreen({
                     style={{
                       fontFamily: fontBold,
                       fontSize: dayPillNumSize,
-                      lineHeight: dayPillNumSize * 1.1,
                       marginTop: 2,
                       color: selected
                         ? isDefault
@@ -301,7 +294,16 @@ export function AgendaScreen({
               );
             })}
           </ScrollView>
+        </View>
 
+        <ScrollView
+          style={styles.activityScroll}
+          contentContainerStyle={[
+            styles.activityScrollContent,
+            { paddingBottom: 120 + insets.bottom },
+          ]}
+          showsVerticalScrollIndicator={false}
+        >
           <View style={styles.listGap}>
             {filtered.length === 0 ? (
               <Text
@@ -309,8 +311,8 @@ export function AgendaScreen({
                   fontFamily: fontRegular,
                   fontSize: bodySize,
                   color: palette.textMuted,
-                  marginTop: 8,
-                  paddingBottom: 8,
+                  marginTop: 20,
+                  textAlign: "center",
                 }}
               >
                 Nenhuma atividade neste dia.
@@ -344,9 +346,7 @@ export function AgendaScreen({
                         style={[
                           styles.emptyCircle,
                           {
-                            borderColor: isDefault
-                              ? "#7EB8E8"
-                              : palette.border,
+                            borderColor: isDefault ? "#7EB8E8" : palette.border,
                           },
                         ]}
                       />
@@ -357,9 +357,7 @@ export function AgendaScreen({
                           fontFamily: fontBold,
                           fontSize: bodySize,
                           color: item.done ? completedColor : palette.text,
-                          textDecorationLine: item.done
-                            ? "line-through"
-                            : "none",
+                          textDecorationLine: item.done ? "line-through" : "none",
                         }}
                       >
                         {item.title}
@@ -385,8 +383,8 @@ export function AgendaScreen({
               ))
             )}
           </View>
-        </View>
-      </ScrollView>
+        </ScrollView>
+      </View>
     </View>
   );
 }
@@ -395,55 +393,29 @@ const styles = StyleSheet.create({
   flex: {
     flex: 1,
   },
-  headerRowAgenda: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-    gap: 10,
+  fixedTop: {
+    paddingBottom: 20,
   },
-  profilePill: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    borderRadius: 999,
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    gap: 10,
-    minHeight: 48,
-  },
-  avatarCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  iconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  scroll: {
-    flex: 1,
-  },
-  scrollContent: {
+  titleInfo: {
     paddingHorizontal: 20,
+    marginBottom: 10,
   },
   agendaSheet: {
-    marginHorizontal: -20,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    paddingTop: 20,
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    paddingTop: 40,
+    flex: 1,
+    overflow: "hidden", // Ensures filler view doesn't bleed out of rounded corners
+  },
+  dayStripContainer: {
+    paddingBottom: 16,
+  },
+  activityScroll: {
+    flex: 1,
+  },
+  activityScrollContent: {
     paddingHorizontal: 20,
-    paddingBottom: 24,
+    flexGrow: 1,
   },
   dayStripContent: {
     flexDirection: "row",
