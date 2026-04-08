@@ -12,6 +12,8 @@ import {
   firebaseSignIn,
   firebaseSignOut,
   firebaseSignUp,
+  firebaseUpdateProfile,
+  firebaseDeleteAccount,
 } from "../data/firebase/firebaseAuth";
 import {
   addFirestoreTask,
@@ -627,7 +629,31 @@ export function AppRoot(): ReactElement {
       prev ? { ...prev, fontScaleMultiplier: clamped } : prev,
     );
   };
+  const handleUpdateProfile = async (name: string, email: string) => {
+    if (useFirebaseAuth && authUser) {
+      await firebaseUpdateProfile(name, email);
+      const user = getFirebaseAuth().currentUser;
+      if (user) {
+        setAuthUser(user);
+        await persistSettings.execute({ userDisplayName: name });
+        setSettings((prev) => prev ? { ...prev, userDisplayName: name } : prev);
+      }
+    } else {
+      await persistSettings.execute({ userDisplayName: name });
+      setSettings((prev) => prev ? { ...prev, userDisplayName: name } : prev);
+    }
+  };
 
+  const handleDeleteAccount = async () => {
+    if (useFirebaseAuth && authUser) {
+      await firebaseDeleteAccount();
+      setAuthUser(null);
+      setRemoteActivities([]);
+    }
+    await revertToWelcomeStep.execute();
+    setSettings((prev) => (prev ? { ...prev, welcomeScreenCompleted: false } : prev));
+  };
+  
   const onboardingBody = (() => {
     if (!settings.visualOnboardingCompleted) {
       return (
@@ -735,8 +761,11 @@ export function AppRoot(): ReactElement {
     return (
       <MainAppScreen
         userDisplayName={displayNameMain}
+        userEmail={useFirebaseAuth && authUser ? authUser.email || "" : ""}
         onBack={handleBackFromMainAppToWelcome}
         onLogout={handleBackFromMainAppToWelcome}
+        onUpdateProfile={handleUpdateProfile}
+        onDeleteAccount={handleDeleteAccount}
         onUpdateThemePreference={handleUpdateThemePreference}
         onUpdateFontScale={handleUpdateFontScaleFromSettings}
         remoteTasks={remoteTasksBridge}

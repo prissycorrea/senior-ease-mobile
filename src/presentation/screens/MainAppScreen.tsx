@@ -51,6 +51,7 @@ export type MainAppRemoteTasks = {
 };
 import { AddTaskScreen } from "./AddTaskScreen";
 import { AgendaScreen } from "./AgendaScreen";
+import { EditProfileScreen } from "./EditProfileScreen";
 import { FontSizeOnboardingScreen } from "./FontSizeOnboardingScreen";
 import { SettingsScreen } from "./SettingsScreen";
 import { TaskDetailScreen } from "./TaskDetailScreen";
@@ -66,8 +67,11 @@ const COMPLETED_GREEN_HC = "#69F0AE";
 
 type Props = {
   userDisplayName: string;
+  userEmail: string;
   onBack: () => Promise<void>;
   onLogout: () => Promise<void>;
+  onUpdateProfile: (name: string, email: string) => Promise<void>;
+  onDeleteAccount: () => Promise<void>;
   onUpdateThemePreference: (preference: ThemePreference) => Promise<void>;
   onUpdateFontScale: (multiplier: number) => Promise<void>;
   remoteTasks?: MainAppRemoteTasks;
@@ -181,8 +185,11 @@ function DailyProgressRing({
 
 export function MainAppScreen({
   userDisplayName,
+  userEmail,
   onBack,
   onLogout,
+  onUpdateProfile,
+  onDeleteAccount,
   onUpdateThemePreference,
   onUpdateFontScale,
   remoteTasks,
@@ -208,6 +215,7 @@ export function MainAppScreen({
   const [mainOverlay, setMainOverlay] = useState<
     "none" | "settings" | "fontSize"
   >("none");
+  const [editProfileVisible, setEditProfileVisible] = useState(false);
 
   const isDefault = preference === "default";
   const displayName =
@@ -408,13 +416,27 @@ export function MainAppScreen({
           onBack={handleFontSizeFromSettingsBack}
         />
       ) : mainOverlay === "settings" ? (
-        <SettingsScreen
-          userDisplayName={displayName}
-          onBack={handleSettingsBack}
-          onFontSize={handleOpenFontSizeFromSettings}
-          onUpdateThemePreference={onUpdateThemePreference}
-          onLogout={onLogout}
-        />
+        <>
+          <SettingsScreen
+            userDisplayName={displayName}
+            onBack={handleSettingsBack}
+            onFontSize={handleOpenFontSizeFromSettings}
+            onUpdateThemePreference={onUpdateThemePreference}
+            onLogout={onLogout}
+            onEditProfile={() => setEditProfileVisible(true)}
+          />
+          <EditProfileScreen
+            visible={editProfileVisible}
+            initialName={displayName}
+            initialEmail={userEmail}
+            onClose={() => setEditProfileVisible(false)}
+            onSave={async (name, email) => {
+              await onUpdateProfile(name, email);
+              setEditProfileVisible(false);
+            }}
+            onDeleteAccount={onDeleteAccount}
+          />
+        </>
       ) : (
         <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
         {mainTab === "home" ? (
