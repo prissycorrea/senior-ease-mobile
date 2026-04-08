@@ -7,6 +7,7 @@ import {
   orderBy,
   query,
   updateDoc,
+  where,
   type Unsubscribe,
 } from "firebase/firestore";
 
@@ -21,11 +22,16 @@ import { getFirebaseFirestore } from "./firebaseApp";
 const TASKS = "tasks";
 
 export function subscribeTasks(
+  userId: string,
   onNext: (tasks: HomeActivity[]) => void,
   onError?: (e: unknown) => void,
 ): Unsubscribe {
   const db = getFirebaseFirestore();
-  const q = query(collection(db, TASKS), orderBy("createdAt", "desc"));
+  const q = query(
+    collection(db, TASKS),
+    where("userId", "==", userId),
+    orderBy("createdAt", "desc"),
+  );
   return onSnapshot(
     q,
     (snap) => {
@@ -43,12 +49,14 @@ export function subscribeTasks(
 }
 
 export async function addFirestoreTask(payload: {
+  userId: string;
   task: string;
   period: string;
   completed: boolean;
 }): Promise<void> {
   const db = getFirebaseFirestore();
   await addDoc(collection(db, TASKS), {
+    userId: payload.userId,
     task: payload.task,
     period: payload.period,
     completed: payload.completed,

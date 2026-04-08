@@ -37,6 +37,7 @@ export type SettingsScreenProps = {
   onFontSize: () => void;
   onUpdateThemePreference: (preference: ThemePreference) => Promise<void>;
   onLogout: () => Promise<void>;
+  onEditProfile: () => void;
 };
 
 export function SettingsScreen({
@@ -45,6 +46,7 @@ export function SettingsScreen({
   onFontSize,
   onUpdateThemePreference,
   onLogout,
+  onEditProfile,
 }: SettingsScreenProps): ReactElement {
   const insets = useSafeAreaInsets();
   const { preference, palette } = useAppTheme();
@@ -212,12 +214,7 @@ export function SettingsScreen({
                 {displayName}
               </Text>
               <Pressable
-                onPress={() => {
-                  Alert.alert(
-                    "Editar perfil",
-                    "Em breve você poderá alterar seus dados por aqui.",
-                  );
-                }}
+                onPress={onEditProfile}
                 style={({ pressed }) => [
                   styles.editPill,
                   {
