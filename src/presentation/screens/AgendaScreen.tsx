@@ -23,6 +23,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { screenHeaderPaddingTop } from "../layout/screenHeaderPaddingTop";
 import type { HomeActivity } from "../types/homeActivity";
+import { DashboardHeader } from "../components/DashboardHeader";
 import {
   buildDayStrip,
   formatAgendaLongDate,
@@ -153,71 +154,11 @@ export function AgendaScreen({
 
   return (
     <View style={styles.flex}>
-      <View
-        style={[
-          styles.headerRowAgenda,
-          { paddingTop: screenHeaderPaddingTop(insets.top) },
-        ]}
-      >
-        <View
-          style={[
-            styles.profilePill,
-            {
-              backgroundColor: profilePillBg,
-              borderWidth: isDefault ? 0 : 1,
-              borderColor: palette.border,
-            },
-          ]}
-        >
-          <View
-            style={[
-              styles.avatarCircle,
-              {
-                backgroundColor: isDefault ? "#FFFFFF" : palette.background,
-              },
-            ]}
-          >
-            <Ionicons
-              name="person-outline"
-              size={Math.min(26, Math.max(18, Math.round(22 * scale)))}
-              color={isDefault ? "#5C6B7A" : palette.textMuted}
-            />
-          </View>
-          <Text
-            testID="agenda-user-name"
-            numberOfLines={1}
-            style={{
-              fontFamily: fontBold,
-              fontSize: nameSize,
-              color: palette.text,
-              flex: 1,
-            }}
-          >
-            {displayName}
-          </Text>
-        </View>
-
-        <Pressable
-          onPress={onSettings}
-          style={({ pressed }) => [
-            styles.iconCircle,
-            {
-              backgroundColor: isDefault ? "#FFFFFF" : palette.surface,
-              borderWidth: isDefault ? 0 : 1,
-              borderColor: palette.border,
-              opacity: pressed ? 0.88 : 1,
-            },
-          ]}
-          accessibilityRole="button"
-          accessibilityLabel="Configurações"
-        >
-          <Ionicons
-            name="settings-outline"
-            size={iconTop}
-            color={isDefault ? "#5C6B7A" : palette.text}
-          />
-        </Pressable>
-      </View>
+      <DashboardHeader
+        displayName={displayName}
+        onSettings={onSettings}
+        testID="agenda-dashboard-header"
+      />
 
       <ScrollView
         style={styles.scroll}
@@ -234,6 +175,7 @@ export function AgendaScreen({
             lineHeight: agendaTitleSize * 1.05,
             letterSpacing: -0.5,
             color: agendaTitleColor,
+            marginTop: 10,
             marginBottom: 10,
           }}
         >

@@ -275,7 +275,7 @@ export function AddTaskScreen({
   return (
     <Modal
       visible={visible}
-      animationType="slide"
+      animationType="none"
       presentationStyle="fullScreen"
       onRequestClose={handleClose}
     >

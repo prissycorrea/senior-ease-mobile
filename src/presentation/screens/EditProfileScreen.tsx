@@ -6,10 +6,11 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import * as SystemUI from "expo-system-ui";
 import { StatusBar } from "expo-status-bar";
-import { useCallback, useEffect, useState, type ReactElement } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactElement } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Animated,
   Modal,
   Pressable,
   ScrollView,
@@ -105,12 +106,20 @@ export function EditProfileScreen({
     void SystemUI.setBackgroundColorAsync(topBg);
   }, [topBg]);
 
+  const slideAnim = useRef(new Animated.Value(600)).current;
+
   const handleClose = useCallback(() => {
     if (submitting || deleting) return;
-    setName(initialName);
-    setEmail(initialEmail);
-    onClose();
-  }, [deleting, onClose, submitting, initialName, initialEmail]);
+    Animated.timing(slideAnim, {
+      toValue: 600,
+      duration: 250,
+      useNativeDriver: true,
+    }).start(() => {
+      setName(initialName);
+      setEmail(initialEmail);
+      onClose();
+    });
+  }, [deleting, onClose, submitting, initialName, initialEmail, slideAnim]);
 
   const handleSave = useCallback(async () => {
     if (!canSave || submitting || deleting) return;
@@ -159,18 +168,24 @@ export function EditProfileScreen({
       setEmail(initialEmail);
       setSubmitting(false);
       setDeleting(false);
+      slideAnim.setValue(800);
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 350,
+        useNativeDriver: true,
+      }).start();
     }
-  }, [visible, initialName, initialEmail]);
+  }, [visible, initialName, initialEmail, slideAnim]);
 
   return (
     <Modal
       visible={visible}
       transparent
-      animationType="slide"
+      animationType="fade"
       onRequestClose={handleClose}
     >
       <View style={styles.backdrop}>
-        <View
+        <Animated.View
           testID="edit-profile-sheet"
           style={[
             styles.sheetContainer,
@@ -179,6 +194,7 @@ export function EditProfileScreen({
               borderColor: isDefault ? "transparent" : palette.border,
               borderWidth: isDefault ? 0 : 1,
               paddingBottom: insets.bottom,
+              transform: [{ translateY: slideAnim }],
             },
           ]}
         >
@@ -365,7 +381,7 @@ export function EditProfileScreen({
               </Pressable>
             </View>
           </View>
-        </View>
+        </Animated.View>
       </View>
     </Modal>
   );
