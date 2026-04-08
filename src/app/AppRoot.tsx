@@ -44,6 +44,7 @@ import { CreateAccountPasswordScreen } from "../presentation/screens/CreateAccou
 import { FontSizeOnboardingScreen } from "../presentation/screens/FontSizeOnboardingScreen";
 import { LoginEmailScreen } from "../presentation/screens/LoginEmailScreen";
 import { LoginPasswordScreen } from "../presentation/screens/LoginPasswordScreen";
+import { RegistrationSuccessScreen } from "../presentation/screens/RegistrationSuccessScreen";
 import {
   MainAppScreen,
   type MainAppRemoteTasks,
@@ -90,6 +91,7 @@ export function AppRoot(): ReactElement {
     useFirebaseAuth ? undefined : null,
   );
   const [remoteActivities, setRemoteActivities] = useState<HomeActivity[]>([]);
+  const [autoOpenCreateTask, setAutoOpenCreateTask] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -118,6 +120,7 @@ export function AppRoot(): ReactElement {
   useEffect(() => {
     if (!useFirebaseAuth || !authUser) return;
     return subscribeTasks(
+      authUser.uid,
       (list) => {
         setRemoteActivities(list);
       },
@@ -133,7 +136,9 @@ export function AppRoot(): ReactElement {
       authUser &&
       settings.visualOnboardingCompleted &&
       settings.fontSizeOnboardingCompleted &&
-      !settings.welcomeScreenCompleted
+      !settings.welcomeScreenCompleted &&
+      settings.registrationStep === 0 &&
+      settings.loginStep === 0
     ) {
       const name =
         authUser.displayName?.trim() ||
@@ -160,7 +165,9 @@ export function AppRoot(): ReactElement {
     return {
       activities: remoteActivities,
       createTask: async (_title, _subtitle, _scheduleDate, periodIso) => {
+        if (!authUser?.uid) return;
         await addFirestoreTask({
+          userId: authUser.uid,
           task: _title,
           period: periodIso,
           completed: false,
@@ -458,8 +465,7 @@ export function AppRoot(): ReactElement {
         const user = await firebaseSignUp(name, email, password);
         const displayName = user.displayName?.trim() || name;
         await persistSettings.execute({
-          welcomeScreenCompleted: true,
-          registrationStep: 0,
+          registrationStep: 4,
           registrationDraftFullName: "",
           registrationDraftEmail: "",
           loginStep: 0,
@@ -471,8 +477,7 @@ export function AppRoot(): ReactElement {
           prev
             ? {
                 ...prev,
-                welcomeScreenCompleted: true,
-                registrationStep: 0,
+                registrationStep: 4,
                 registrationDraftFullName: "",
                 registrationDraftEmail: "",
                 loginStep: 0,
@@ -492,8 +497,7 @@ export function AppRoot(): ReactElement {
       return;
     }
     await persistSettings.execute({
-      welcomeScreenCompleted: true,
-      registrationStep: 0,
+      registrationStep: 4,
       registrationDraftFullName: "",
       registrationDraftEmail: "",
       loginStep: 0,
@@ -505,8 +509,7 @@ export function AppRoot(): ReactElement {
       prev
         ? {
             ...prev,
-            welcomeScreenCompleted: true,
-            registrationStep: 0,
+            registrationStep: 4,
             registrationDraftFullName: "",
             registrationDraftEmail: "",
             loginStep: 0,
@@ -644,7 +647,10 @@ export function AppRoot(): ReactElement {
         />
       );
     }
-    if (!settings.welcomeScreenCompleted) {
+    const shouldShowOnboarding =
+      !settings.welcomeScreenCompleted || (useFirebaseAuth && authUser === null);
+
+    if (shouldShowOnboarding) {
       if (settings.registrationStep === 1) {
         return (
           <CreateAccountNameScreen
@@ -668,6 +674,22 @@ export function AppRoot(): ReactElement {
           <CreateAccountPasswordScreen
             onBack={handleSignUpStep3Back}
             onComplete={handleSignUpComplete}
+          />
+        );
+      }
+      if (settings.registrationStep === 4) {
+        return (
+          <RegistrationSuccessScreen
+            onCreateTask={async () => {
+              setAutoOpenCreateTask(true);
+              await persistSettings.execute({ welcomeScreenCompleted: true, registrationStep: 0 });
+              setSettings((prev) => prev ? { ...prev, welcomeScreenCompleted: true, registrationStep: 0 } : prev);
+            }}
+            onSkip={async () => {
+              setAutoOpenCreateTask(false);
+              await persistSettings.execute({ welcomeScreenCompleted: true, registrationStep: 0 });
+              setSettings((prev) => prev ? { ...prev, welcomeScreenCompleted: true, registrationStep: 0 } : prev);
+            }}
           />
         );
       }
@@ -718,6 +740,7 @@ export function AppRoot(): ReactElement {
         onUpdateThemePreference={handleUpdateThemePreference}
         onUpdateFontScale={handleUpdateFontScaleFromSettings}
         remoteTasks={remoteTasksBridge}
+        autoLaunchTaskCreation={autoOpenCreateTask}
       />
     );
   })();

@@ -1,8 +1,8 @@
 import { FONT_SCALE_DEFAULT } from "./fontScale";
 import type { ThemePreference } from "./ThemePreference";
 
-/** 0 = fora do cadastro; 1–3 = etapas do fluxo “criar conta”. */
-export type RegistrationStep = 0 | 1 | 2 | 3;
+/** 0 = fora do cadastro; 1–4 = etapas do fluxo “criar conta”. */
+export type RegistrationStep = 0 | 1 | 2 | 3 | 4;
 
 /** 0 = fora do login; 1 = e-mail; 2 = senha. */
 export type LoginStep = 0 | 1 | 2;

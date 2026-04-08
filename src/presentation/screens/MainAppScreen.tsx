@@ -71,6 +71,7 @@ type Props = {
   onUpdateThemePreference: (preference: ThemePreference) => Promise<void>;
   onUpdateFontScale: (multiplier: number) => Promise<void>;
   remoteTasks?: MainAppRemoteTasks;
+  autoLaunchTaskCreation?: boolean;
 };
 
 function createSeedActivities(): HomeActivity[] {
@@ -185,6 +186,7 @@ export function MainAppScreen({
   onUpdateThemePreference,
   onUpdateFontScale,
   remoteTasks,
+  autoLaunchTaskCreation,
 }: Props): ReactElement {
   const insets = useSafeAreaInsets();
   const { preference, palette } = useAppTheme();
@@ -256,6 +258,12 @@ export function MainAppScreen({
       setDetailTaskId(null);
     }
   }, [activities, detailTaskId]);
+
+  useEffect(() => {
+    if (autoLaunchTaskCreation) {
+      setAddTaskVisible(true);
+    }
+  }, [autoLaunchTaskCreation]);
 
   useEffect(() => {
     void SystemUI.setBackgroundColorAsync(palette.background);
