@@ -741,7 +741,6 @@ export function AppRoot(): ReactElement {
         <WelcomeScreen
           onCreateAccount={handleCreateAccount}
           onAlreadyHaveAccount={handleAlreadyHaveAccount}
-          onBack={handleBackToFontSizeStep}
           onHelpPress={() => {
             Alert.alert(
               "Preciso de ajuda",

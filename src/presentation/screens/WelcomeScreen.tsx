@@ -48,14 +48,12 @@ const BLUR_INTENSITY = 16;
 type Props = {
   onCreateAccount: () => Promise<void>;
   onAlreadyHaveAccount: () => Promise<void>;
-  onBack: () => Promise<void>;
   onHelpPress?: () => void;
 };
 
 export function WelcomeScreen({
   onCreateAccount,
   onAlreadyHaveAccount,
-  onBack,
   onHelpPress,
 }: Props): ReactElement {
   const insets = useSafeAreaInsets();
@@ -67,7 +65,6 @@ export function WelcomeScreen({
     Unbounded_700Bold,
   });
   const [busy, setBusy] = useState(false);
-  const [backing, setBacking] = useState(false);
 
   const isDefault = preference === "default";
   const logoSeniorColor = isDefault ? brandNavy : "#FFFFFF";
@@ -116,16 +113,6 @@ export function WelcomeScreen({
     }
   }, [busy, onAlreadyHaveAccount]);
 
-  const handleBack = useCallback(async () => {
-    if (backing || busy) return;
-    setBacking(true);
-    try {
-      await onBack();
-    } finally {
-      setBacking(false);
-    }
-  }, [backing, busy, onBack]);
-
   if (!fontsLoaded) {
     return (
       <View style={[styles.boot, { backgroundColor: palette.background }]}>
@@ -169,30 +156,7 @@ export function WelcomeScreen({
             { paddingTop: flowHeaderPaddingTop(insets.top) },
           ]}
         >
-          <View style={styles.topBar}>
-            <Pressable
-              testID="welcome-back-button"
-              onPress={handleBack}
-              disabled={backing || busy}
-              style={({ pressed }) => [
-                styles.backButton,
-                {
-                  backgroundColor: isDefault ? "#FFFFFF" : palette.surface,
-                  borderWidth: isDefault ? 0 : 2,
-                  borderColor: isDefault ? "transparent" : palette.border,
-                },
-                pressed && styles.pressed,
-              ]}
-              accessibilityRole="button"
-              accessibilityLabel="Voltar"
-            >
-              <Ionicons
-                name="chevron-back"
-                size={backIconSize}
-                color={backIconColor}
-              />
-            </Pressable>
-          </View>
+
           <View
             style={styles.logoBlock}
             accessibilityRole="header"
