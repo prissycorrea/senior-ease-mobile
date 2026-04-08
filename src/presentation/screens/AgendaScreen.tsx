@@ -21,7 +21,6 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { screenHeaderPaddingTop } from "../layout/screenHeaderPaddingTop";
 import type { HomeActivity } from "../types/homeActivity";
 import { DashboardHeader } from "../components/DashboardHeader";
 import {
@@ -85,7 +84,6 @@ export function AgendaScreen({
   const isDefault = preference === "default";
   const displayName =
     userDisplayName.trim().length > 0 ? userDisplayName.trim() : "Usuário";
-  const profilePillBg = isDefault ? PROFILE_PILL_DEFAULT : palette.surface;
   const agendaTitleColor = isDefault ? brandNavy : highContrastActionBlue;
   const cardBg = isDefault ? "#FFFFFF" : palette.surface;
   const cardBorder = isDefault ? "#C9D5DE" : palette.border;
@@ -93,14 +91,13 @@ export function AgendaScreen({
   const chevronColor = isDefault ? "#8FA3B3" : palette.textMuted;
   const primaryNav = isDefault ? brandNavy : palette.primary;
 
-  const nameSize = Math.min(20, Math.max(14, Math.round(16 * scale)));
   const agendaTitleSize = Math.min(42, Math.max(30, Math.round(36 * scale)));
   const dateLineSize = Math.min(18, Math.max(14, Math.round(16 * scale)));
   const bodySize = Math.min(20, Math.max(14, Math.round(15 * scale)));
   const smallMeta = Math.min(17, Math.max(12, Math.round(13 * scale)));
   const dayPillWeekSize = Math.min(14, Math.max(11, Math.round(12 * scale)));
   const dayPillNumSize = Math.min(20, Math.max(15, Math.round(17 * scale)));
-  const iconTop = Math.min(34, Math.max(22, Math.round(26 * scale)));
+
 
   const selectedDate = useMemo(() => {
     const d = parseISODateToLocal(selectedDayKey);

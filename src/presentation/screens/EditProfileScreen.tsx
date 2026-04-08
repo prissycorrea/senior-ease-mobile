@@ -5,7 +5,6 @@ import {
 } from "@expo-google-fonts/lexend";
 import { Ionicons } from "@expo/vector-icons";
 import * as SystemUI from "expo-system-ui";
-import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useRef, useState, type ReactElement } from "react";
 import {
   ActivityIndicator,
@@ -20,7 +19,6 @@ import {
   View,
 } from "react-native";
 import {
-  SafeAreaView,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 

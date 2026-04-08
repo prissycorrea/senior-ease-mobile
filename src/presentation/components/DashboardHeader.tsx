@@ -69,6 +69,7 @@ export function DashboardHeader({
           ]}
         >
           <Text
+            testID="home-user-name"
             numberOfLines={1}
             style={{
               fontFamily: fontBold,

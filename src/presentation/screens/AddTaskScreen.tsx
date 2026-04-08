@@ -27,7 +27,6 @@ import { screenHeaderPaddingTop } from "../layout/screenHeaderPaddingTop";
 import {
   addDays,
   localISODate,
-  parseBRDateToISO,
 } from "../utils/agendaDates";
 import { accentBlue, brandNavy, highContrastActionBlue } from "../theme/themePalette";
 import { useFontScaleMultiplier } from "../theme/FontScaleContext";

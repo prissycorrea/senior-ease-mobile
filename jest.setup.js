@@ -11,6 +11,20 @@ jest.mock("firebase/app", () => ({
   initializeApp: jest.fn(() => ({})),
 }));
 
+jest.mock("react-native/Libraries/Alert/Alert", () => ({
+  alert: jest.fn((title, message, buttons) => {
+    if (buttons) {
+      const deleteBtn = buttons.find((b) => b.text === "Excluir" || b.style === "destructive");
+      if (deleteBtn && typeof deleteBtn.onPress === "function") {
+        deleteBtn.onPress();
+      }
+    }
+  }),
+  default: {
+    alert: jest.fn(),
+  },
+}));
+
 jest.mock("firebase/auth", () => ({
   getAuth: jest.fn(() => ({})),
   onAuthStateChanged: jest.fn((_auth, cb) => {
@@ -76,6 +90,11 @@ jest.mock("@expo-google-fonts/lexend", () => ({
   useFonts: () => [true],
   Lexend_400Regular: 1,
   Lexend_700Bold: 1,
+}));
+
+jest.mock("@expo-google-fonts/unbounded", () => ({
+  useFonts: () => [true],
+  Unbounded_700Bold: 1,
 }));
 
 jest.mock("@expo/vector-icons", () => {

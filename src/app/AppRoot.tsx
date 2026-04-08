@@ -24,8 +24,6 @@ import {
 } from "../data/firebase/firebaseTasks";
 import { AsyncStorageSettingsRepository } from "../data/settings/AsyncStorageSettingsRepository";
 import {
-  DEMO_LOGIN_EMAIL,
-  DEMO_LOGIN_PASSWORD,
   DEMO_USER_DISPLAY_NAME,
   demoLoginHelpMessage,
   isDemoLoginValid,
@@ -562,32 +560,7 @@ export function AppRoot(): ReactElement {
     );
   };
 
-  /** Volta da welcome para o passo de tamanho da letra. */
-  const handleBackToFontSizeStep = async () => {
-    await revertToFontStep.execute();
-    await persistSettings.execute({
-      registrationStep: 0,
-      registrationDraftFullName: "",
-      registrationDraftEmail: "",
-      loginStep: 0,
-      loginDraftEmail: "",
-      userDisplayName: "",
-    });
-    setSettings((prev) =>
-      prev
-        ? {
-            ...prev,
-            fontSizeOnboardingCompleted: false,
-            registrationStep: 0,
-            registrationDraftFullName: "",
-            registrationDraftEmail: "",
-            loginStep: 0,
-            loginDraftEmail: "",
-            userDisplayName: "",
-          }
-        : prev,
-    );
-  };
+
 
   /** Volta da tela principal para a welcome (mantém tema e fonte já escolhidos). */
   const handleBackFromMainAppToWelcome = async () => {

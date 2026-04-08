@@ -57,7 +57,7 @@ export function RegistrationSuccessScreen({
   const skipTextSize = Math.min(20, Math.max(14, Math.round(16 * scale)));
 
   return (
-    <View style={[styles.root, { backgroundColor: bg }]}>
+    <View testID="registration-success-screen" style={[styles.root, { backgroundColor: bg }]}>
       <SafeAreaView style={styles.safe} edges={["top", "bottom", "left", "right"]}>
         <StatusBar style={isDefault ? "dark" : "light"} />
         <View style={styles.content}>
