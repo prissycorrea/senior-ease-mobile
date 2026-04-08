@@ -32,6 +32,8 @@ import {
 import { accentBlue, brandNavy, highContrastActionBlue } from "../theme/themePalette";
 import { useFontScaleMultiplier } from "../theme/FontScaleContext";
 import { useAppTheme } from "../theme/ThemeContext";
+import { SeniorCalendar } from "../components/SeniorCalendar";
+import { SeniorTimePicker } from "../components/SeniorTimePicker";
 
 const LEXEND_BOLD = "Lexend_700Bold";
 const LEXEND_REGULAR = "Lexend_400Regular";
@@ -64,53 +66,49 @@ type Props = {
   onOpenSettings?: () => void;
 };
 
-function computeScheduleDate(mode: DayMode, customDate: string): string {
+function computeScheduleDate(mode: DayMode, customDate: Date | null): string {
   const now = new Date();
   if (mode === "today") return localISODate(now);
   if (mode === "tomorrow") return localISODate(addDays(now, 1));
-  const parsed = parseBRDateToISO(customDate.trim(), now.getFullYear());
-  return parsed ?? localISODate(now);
+  if (customDate) return localISODate(customDate);
+  return localISODate(now);
 }
 
 /** Valor ISO para o campo `period` no Firestore (alinhado à web). */
 function buildPeriodIso(
   dayMode: DayMode,
-  customDate: string,
-  timeText: string,
+  customDate: Date | null,
+  hours: number,
+  minutes: number,
 ): string {
   const scheduleDate = computeScheduleDate(dayMode, customDate);
   const [y, m, d] = scheduleDate.split("-").map(Number);
   const base = new Date(y, m - 1, d);
-  const t = timeText.trim();
-  const match = t.match(/(\d{1,2})\s*[:h]\s*(\d{2})/i);
-  let h = 12;
-  let min = 0;
-  if (match) {
-    h = Math.min(23, Math.max(0, parseInt(match[1], 10)));
-    min = Math.min(59, Math.max(0, parseInt(match[2], 10)));
-  }
-  base.setHours(h, min, 0, 0);
+  base.setHours(hours, minutes, 0, 0);
   return base.toISOString();
 }
 
 function formatSubtitle(
   mode: DayMode,
-  customDate: string,
-  timeText: string,
+  customDate: Date | null,
+  hours: number,
+  minutes: number,
   remindOn: boolean,
 ): string {
   let day: string;
   if (mode === "today") day = "Hoje";
   else if (mode === "tomorrow") day = "Amanhã";
-  else day = customDate.trim() || "Data a definir";
-  const t = timeText.trim();
-  let timePart = "";
-  if (t.length > 0) {
-    const normalized = /\d/.test(t) && !t.toLowerCase().includes("h")
-      ? `${t}h`
-      : t;
-    timePart = ` — ${normalized}`;
+  else if (customDate) {
+    const d = customDate.getDate().toString().padStart(2, "0");
+    const mo = (customDate.getMonth() + 1).toString().padStart(2, "0");
+    day = `${d}/${mo}`;
+  } else {
+    day = "Data a definir";
   }
+  const hStr = hours.toString().padStart(2, "0");
+  const mStr = minutes.toString().padStart(2, "0");
+  const timePart = ` — ${hStr}:${mStr}h`;
+
   let s = day + timePart;
   if (remindOn) {
     s += " · Lembrete";
@@ -137,11 +135,12 @@ export function AddTaskScreen({
   const [step, setStep] = useState<1 | 2>(1);
   const [title, setTitle] = useState("");
   const [dayMode, setDayMode] = useState<DayMode>("today");
-  const [customDate, setCustomDate] = useState("");
-  const [timeText, setTimeText] = useState("");
+  const [customDate, setCustomDate] = useState<Date | null>(null);
+  const [hours, setHours] = useState(12);
+  const [minutes, setMinutes] = useState(0);
   const [remindOn, setRemindOn] = useState(false);
-  const [dateFieldOpen, setDateFieldOpen] = useState(false);
-  const [timeFieldOpen, setTimeFieldOpen] = useState(false);
+  const [calendarVisible, setCalendarVisible] = useState(false);
+  const [timePickerVisible, setTimePickerVisible] = useState(false);
   const [flowPhase, setFlowPhase] = useState<FlowPhase>("wizard");
 
   const isDefault = preference === "default";
@@ -186,11 +185,12 @@ export function AddTaskScreen({
       setStep(1);
       setTitle("");
       setDayMode("today");
-      setCustomDate("");
-      setTimeText("");
+      setCustomDate(null);
+      setHours(12);
+      setMinutes(0);
       setRemindOn(false);
-      setDateFieldOpen(false);
-      setTimeFieldOpen(false);
+      setCalendarVisible(false);
+      setTimePickerVisible(false);
     }
   }, [visible]);
 
@@ -239,32 +239,32 @@ export function AddTaskScreen({
       setStep(1);
       return;
     }
-    const sub = formatSubtitle(dayMode, customDate, timeText, remindOn);
+    const sub = formatSubtitle(dayMode, customDate, hours, minutes, remindOn);
     const scheduleDate = computeScheduleDate(dayMode, customDate);
-    const periodIso = buildPeriodIso(dayMode, customDate, timeText);
+    const periodIso = buildPeriodIso(dayMode, customDate, hours, minutes);
     onCreate(t, sub, scheduleDate, periodIso);
     setFlowPhase("success");
-  }, [customDate, dayMode, onCreate, remindOn, timeText, title]);
+  }, [customDate, dayMode, hours, minutes, onCreate, remindOn, title]);
 
   const selectToday = useCallback(() => {
     setDayMode("today");
-    setDateFieldOpen(false);
-    setCustomDate("");
+    setCalendarVisible(false);
+    setCustomDate(null);
   }, []);
 
   const selectTomorrow = useCallback(() => {
     setDayMode("tomorrow");
-    setDateFieldOpen(false);
-    setCustomDate("");
+    setCalendarVisible(false);
+    setCustomDate(null);
   }, []);
 
-  const openCustomDate = useCallback(() => {
+  const openCalendar = useCallback(() => {
     setDayMode("custom");
-    setDateFieldOpen(true);
+    setCalendarVisible(true);
   }, []);
 
-  const openTimeField = useCallback(() => {
-    setTimeFieldOpen(true);
+  const openTimePicker = useCallback(() => {
+    setTimePickerVisible(true);
   }, []);
 
   const canStep1Next = title.trim().length >= 1;
@@ -692,33 +692,9 @@ export function AddTaskScreen({
                     </Pressable>
                   </View>
 
-                  {dateFieldOpen || dayMode === "custom" ? (
-                    <TextInput
-                      testID="add-task-custom-date-input"
-                      value={customDate}
-                      onChangeText={setCustomDate}
-                      placeholder="Ex.: 15/04"
-                      placeholderTextColor={placeholderColor}
-                      style={{
-                        fontFamily: fontRegular,
-                        fontSize: inputSize,
-                        color: palette.text,
-                        backgroundColor: inputBg,
-                        borderWidth: 1,
-                        borderColor: inputBorder,
-                        borderRadius: 14,
-                        paddingHorizontal: 16,
-                        minHeight: 48,
-                        paddingVertical: 12,
-                        marginBottom: 16,
-                      }}
-                      accessibilityLabel="Outra data"
-                    />
-                  ) : null}
-
                   <Pressable
                     testID="add-task-pick-date-row"
-                    onPress={openCustomDate}
+                    onPress={openCalendar}
                     style={({ pressed }) => [
                       styles.optionRow,
                       {
@@ -741,16 +717,29 @@ export function AddTaskScreen({
                         color={titleAccent}
                       />
                     </View>
-                    <Text
-                      style={{
-                        fontFamily: fontBold,
-                        fontSize: inputSize,
-                        color: palette.text,
-                        flex: 1,
-                      }}
-                    >
-                      Selecione outra data
-                    </Text>
+                    <View style={{ flex: 1 }}>
+                      <Text
+                        style={{
+                          fontFamily: fontBold,
+                          fontSize: inputSize,
+                          color: palette.text,
+                        }}
+                      >
+                        Selecione outra data
+                      </Text>
+                      {customDate && (
+                        <Text
+                          style={{
+                            fontFamily: fontRegular,
+                            fontSize: 14 * scale,
+                            color: titleAccent,
+                            marginTop: 2,
+                          }}
+                        >
+                          Selecionado: {customDate.getDate().toString().padStart(2, "0")}/{ (customDate.getMonth() + 1).toString().padStart(2, "0") }
+                        </Text>
+                      )}
+                    </View>
                     <Ionicons
                       name="chevron-forward"
                       size={20}
@@ -760,7 +749,7 @@ export function AddTaskScreen({
 
                   <Pressable
                     testID="add-task-pick-time-row"
-                    onPress={openTimeField}
+                    onPress={openTimePicker}
                     style={({ pressed }) => [
                       styles.optionRow,
                       {
@@ -783,47 +772,33 @@ export function AddTaskScreen({
                         color={titleAccent}
                       />
                     </View>
-                    <Text
-                      style={{
-                        fontFamily: fontBold,
-                        fontSize: inputSize,
-                        color: palette.text,
-                        flex: 1,
-                      }}
-                    >
-                      Informe o horário
-                    </Text>
+                    <View style={{ flex: 1 }}>
+                      <Text
+                        style={{
+                          fontFamily: fontBold,
+                          fontSize: inputSize,
+                          color: palette.text,
+                        }}
+                      >
+                        Informe o horário
+                      </Text>
+                      <Text
+                        style={{
+                          fontFamily: fontRegular,
+                          fontSize: 14 * scale,
+                          color: titleAccent,
+                          marginTop: 2,
+                        }}
+                      >
+                        Selecionado: {hours.toString().padStart(2, "0")}:{minutes.toString().padStart(2, "0")}h
+                      </Text>
+                    </View>
                     <Ionicons
                       name="chevron-forward"
                       size={20}
                       color={bodyColor}
                     />
                   </Pressable>
-
-                  {timeFieldOpen ? (
-                    <TextInput
-                      testID="add-task-time-input"
-                      value={timeText}
-                      onChangeText={setTimeText}
-                      placeholder="Ex.: 10:00h"
-                      placeholderTextColor={placeholderColor}
-                      style={{
-                        fontFamily: fontRegular,
-                        fontSize: inputSize,
-                        color: palette.text,
-                        backgroundColor: inputBg,
-                        borderWidth: 1,
-                        borderColor: inputBorder,
-                        borderRadius: 14,
-                        paddingHorizontal: 16,
-                        minHeight: 48,
-                        paddingVertical: 12,
-                        marginBottom: 8,
-                        marginLeft: 56,
-                      }}
-                      accessibilityLabel="Horário da atividade"
-                    />
-                  ) : null}
 
                   <View
                     style={[
@@ -939,6 +914,28 @@ export function AddTaskScreen({
           </View>
         </SafeAreaView>
         )}
+
+        <SeniorCalendar
+          visible={calendarVisible}
+          onClose={() => setCalendarVisible(false)}
+          onSelect={(date) => {
+            setCustomDate(date);
+            setCalendarVisible(false);
+          }}
+          initialDate={customDate || new Date()}
+        />
+
+        <SeniorTimePicker
+          visible={timePickerVisible}
+          onClose={() => setTimePickerVisible(false)}
+          onConfirm={(h, m) => {
+            setHours(h);
+            setMinutes(m);
+            setTimePickerVisible(false);
+          }}
+          initialHours={hours}
+          initialMinutes={minutes}
+        />
       </View>
     </Modal>
   );
