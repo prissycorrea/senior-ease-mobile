@@ -51,9 +51,12 @@ export type MainAppRemoteTasks = {
 };
 import { AddTaskScreen } from "./AddTaskScreen";
 import { AgendaScreen } from "./AgendaScreen";
+import { EditProfileScreen } from "./EditProfileScreen";
 import { FontSizeOnboardingScreen } from "./FontSizeOnboardingScreen";
 import { SettingsScreen } from "./SettingsScreen";
 import { TaskDetailScreen } from "./TaskDetailScreen";
+import { DashboardHeader } from "../components/DashboardHeader";
+import { BottomNavigation } from "../components/BottomNavigation";
 
 const LEXEND_BOLD = "Lexend_700Bold";
 const LEXEND_REGULAR = "Lexend_400Regular";
@@ -66,11 +69,15 @@ const COMPLETED_GREEN_HC = "#69F0AE";
 
 type Props = {
   userDisplayName: string;
+  userEmail: string;
   onBack: () => Promise<void>;
   onLogout: () => Promise<void>;
+  onUpdateProfile: (name: string, email: string) => Promise<void>;
+  onDeleteAccount: () => Promise<void>;
   onUpdateThemePreference: (preference: ThemePreference) => Promise<void>;
   onUpdateFontScale: (multiplier: number) => Promise<void>;
   remoteTasks?: MainAppRemoteTasks;
+  autoLaunchTaskCreation?: boolean;
 };
 
 function createSeedActivities(): HomeActivity[] {
@@ -180,11 +187,15 @@ function DailyProgressRing({
 
 export function MainAppScreen({
   userDisplayName,
+  userEmail,
   onBack,
   onLogout,
+  onUpdateProfile,
+  onDeleteAccount,
   onUpdateThemePreference,
   onUpdateFontScale,
   remoteTasks,
+  autoLaunchTaskCreation,
 }: Props): ReactElement {
   const insets = useSafeAreaInsets();
   const { preference, palette } = useAppTheme();
@@ -206,6 +217,7 @@ export function MainAppScreen({
   const [mainOverlay, setMainOverlay] = useState<
     "none" | "settings" | "fontSize"
   >("none");
+  const [editProfileVisible, setEditProfileVisible] = useState(false);
 
   const isDefault = preference === "default";
   const displayName =
@@ -256,6 +268,12 @@ export function MainAppScreen({
       setDetailTaskId(null);
     }
   }, [activities, detailTaskId]);
+
+  useEffect(() => {
+    if (autoLaunchTaskCreation) {
+      setAddTaskVisible(true);
+    }
+  }, [autoLaunchTaskCreation]);
 
   useEffect(() => {
     void SystemUI.setBackgroundColorAsync(palette.background);
@@ -400,104 +418,36 @@ export function MainAppScreen({
           onBack={handleFontSizeFromSettingsBack}
         />
       ) : mainOverlay === "settings" ? (
-        <SettingsScreen
-          userDisplayName={displayName}
-          onBack={handleSettingsBack}
-          onFontSize={handleOpenFontSizeFromSettings}
-          onUpdateThemePreference={onUpdateThemePreference}
-          onLogout={onLogout}
-        />
+        <>
+          <SettingsScreen
+            userDisplayName={displayName}
+            onBack={handleSettingsBack}
+            onFontSize={handleOpenFontSizeFromSettings}
+            onUpdateThemePreference={onUpdateThemePreference}
+            onLogout={onLogout}
+            onEditProfile={() => setEditProfileVisible(true)}
+          />
+          <EditProfileScreen
+            visible={editProfileVisible}
+            initialName={displayName}
+            initialEmail={userEmail}
+            onClose={() => setEditProfileVisible(false)}
+            onSave={async (name, email) => {
+              await onUpdateProfile(name, email);
+              setEditProfileVisible(false);
+            }}
+            onDeleteAccount={onDeleteAccount}
+          />
+        </>
       ) : (
         <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
         {mainTab === "home" ? (
           <>
-        <View
-          style={[
-            styles.headerRow,
-            { paddingTop: screenHeaderPaddingTop(insets.top) },
-          ]}
-        >
-          <Pressable
-            onPress={handleBack}
-            disabled={backing}
-            style={({ pressed }) => [
-              styles.iconCircle,
-              {
-                backgroundColor: isDefault ? "#FFFFFF" : palette.surface,
-                borderWidth: isDefault ? 0 : 1,
-                borderColor: palette.border,
-              },
-              pressed && styles.pressed,
-            ]}
-            accessibilityRole="button"
-            accessibilityLabel="Voltar"
-          >
-            <Ionicons
-              name="chevron-back"
-              size={iconTop}
-              color={isDefault ? brandNavy : palette.text}
-            />
-          </Pressable>
-
-          <View
-            style={[
-              styles.profilePill,
-              {
-                backgroundColor: profilePillBg,
-                borderWidth: isDefault ? 0 : 1,
-                borderColor: palette.border,
-              },
-            ]}
-          >
-            <View
-              style={[
-                styles.avatarCircle,
-                {
-                  backgroundColor: isDefault ? "#FFFFFF" : palette.background,
-                },
-              ]}
-            >
-              <Ionicons
-                name="person-outline"
-                size={Math.min(26, Math.max(18, Math.round(22 * scale)))}
-                color={isDefault ? "#5C6B7A" : palette.textMuted}
-              />
-            </View>
-            <Text
-              testID="home-user-name"
-              numberOfLines={1}
-              style={{
-                fontFamily: fontBold,
-                fontSize: nameSize,
-                color: palette.text,
-                flex: 1,
-              }}
-            >
-              {displayName}
-            </Text>
-          </View>
-
-          <Pressable
-            onPress={handleSettings}
-            style={({ pressed }) => [
-              styles.iconCircle,
-              {
-                backgroundColor: isDefault ? "#FFFFFF" : palette.surface,
-                borderWidth: isDefault ? 0 : 1,
-                borderColor: palette.border,
-              },
-              pressed && styles.pressed,
-            ]}
-            accessibilityRole="button"
-            accessibilityLabel="Configurações"
-          >
-            <Ionicons
-              name="settings-outline"
-              size={iconTop}
-              color={isDefault ? "#5C6B7A" : palette.text}
-            />
-          </Pressable>
-        </View>
+          <DashboardHeader
+            displayName={displayName}
+            onSettings={handleSettings}
+            testID="home-dashboard-header"
+          />
 
         <ScrollView
           style={styles.scroll}
@@ -530,138 +480,180 @@ export function MainAppScreen({
             </Text>
           </Text>
 
-          <View
-            style={[
-              styles.progressCard,
-              {
-                backgroundColor: progressCardBg,
-                borderWidth: isDefault ? 0 : 1,
-                borderColor: palette.border,
-                ...(isDefault
-                  ? {}
-                  : {
-                      shadowColor: "#000",
-                      shadowOffset: { width: 0, height: 2 },
-                      shadowOpacity: 0.08,
-                      shadowRadius: 6,
-                      elevation: 2,
-                    }),
-              },
-            ]}
-          >
-            <View
-              style={[
-                styles.ringShadowWrap,
-                {
-                  width: ringSize,
-                  height: ringSize,
-                  borderRadius: ringSize / 2,
-                  backgroundColor: progressCardBg,
-                  shadowOpacity: isDefault ? 0.12 : 0.18,
-                  elevation: isDefault ? 4 : 0,
-                },
-              ]}
-            >
-              <DailyProgressRing
-                size={ringSize}
-                strokeWidth={ringStroke}
-                progress={progressFraction.pct}
-                activeColor={ringActive}
-                trackColor={ringTrack}
-                label={`${Math.round(progressFraction.pct * 100)}%`}
-                fontFamily={fontBold}
-                labelSize={ringLabel}
-                labelColor={palette.text}
-              />
-            </View>
-            <View style={styles.progressTextCol}>
+          {activities.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <View
+                style={[
+                  styles.emptyIconCircle,
+                  { backgroundColor: isDefault ? "#E3F2FD" : "rgba(84, 166, 255, 0.1)" },
+                ]}
+              >
+                <Ionicons
+                  name="calendar-clear-outline"
+                  size={Math.min(60, Math.max(40, Math.round(48 * scale)))}
+                  color={titleAccent}
+                />
+              </View>
               <Text
                 style={{
                   fontFamily: fontBold,
-                  fontSize: sectionTitle,
-                  lineHeight: Math.round(sectionTitle * 1.2),
-                  color: ringActive,
-                  marginBottom: 8,
+                  fontSize: Math.min(24, Math.max(18, Math.round(20 * scale))),
+                  color: palette.text,
+                  textAlign: "center",
+                  marginBottom: 12,
                 }}
               >
-                Progresso{"\n"}diário
+                Tudo calmo por aqui
               </Text>
               <Text
                 style={{
                   fontFamily: fontRegular,
-                  fontSize: smallMeta,
-                  lineHeight: Math.round(smallMeta * 1.35),
-                  color: progressSubtitleColor,
+                  fontSize: bodySize,
+                  color: palette.textMuted,
+                  textAlign: "center",
+                  lineHeight: bodySize * 1.4,
+                  paddingHorizontal: 20,
                 }}
               >
-                {progressFraction.done} de {progressFraction.total} atividades
+                Que tal planejar as atividades do seu dia?
               </Text>
             </View>
-          </View>
-
-          <View style={styles.listGap}>
-            {activities.map((item) => (
-              <Pressable
-                key={item.id}
-                testID={`home-activity-${item.id}`}
-                onPress={() => handleActivityPress(item.id)}
-                style={({ pressed }) => [
-                  styles.activityCard,
+          ) : (
+            <>
+              <View
+                style={[
+                  styles.progressCard,
                   {
-                    backgroundColor: cardBg,
-                    borderColor: cardBorder,
-                    opacity: pressed ? 0.92 : 1,
+                    backgroundColor: progressCardBg,
+                    borderWidth: isDefault ? 0 : 1,
+                    borderColor: palette.border,
+                    ...(isDefault
+                      ? {}
+                      : {
+                          shadowColor: "#000",
+                          shadowOffset: { width: 0, height: 2 },
+                          shadowOpacity: 0.08,
+                          shadowRadius: 6,
+                          elevation: 2,
+                        }),
                   },
                 ]}
-                accessibilityRole="button"
-                accessibilityLabel={item.title}
               >
-                <View style={styles.activityRow}>
-                  {item.done ? (
-                    <Ionicons
-                      name="checkmark-circle"
-                      size={Math.min(32, Math.max(22, Math.round(26 * scale)))}
-                      color={completedColor}
-                    />
-                  ) : (
-                    <View
-                      style={[
-                        styles.emptyCircle,
-                        { borderColor: isDefault ? "#B0BEC5" : palette.border },
-                      ]}
-                    />
-                  )}
-                  <View style={styles.activityTexts}>
-                    <Text
-                      style={{
-                        fontFamily: fontBold,
-                        fontSize: bodySize,
-                        color: item.done ? completedColor : palette.text,
-                        textDecorationLine: item.done ? "line-through" : "none",
-                      }}
-                    >
-                      {item.title}
-                    </Text>
-                    <Text
-                      style={{
-                        fontFamily: fontRegular,
-                        fontSize: smallMeta,
-                        color: palette.textMuted,
-                        marginTop: 4,
-                      }}
-                    >
-                      {item.subtitle}
-                    </Text>
-                  </View>
-                  <Ionicons
-                    name="chevron-forward"
-                    size={22}
-                    color={chevronColor}
+                <View
+                  style={[
+                    styles.ringShadowWrap,
+                    {
+                      width: ringSize,
+                      height: ringSize,
+                      borderRadius: ringSize / 2,
+                      backgroundColor: progressCardBg,
+                      shadowOpacity: isDefault ? 0.12 : 0.18,
+                      elevation: isDefault ? 4 : 0,
+                    },
+                  ]}
+                >
+                  <DailyProgressRing
+                    size={ringSize}
+                    strokeWidth={ringStroke}
+                    progress={progressFraction.pct}
+                    activeColor={ringActive}
+                    trackColor={ringTrack}
+                    label={`${Math.round(progressFraction.pct * 100)}%`}
+                    fontFamily={fontBold}
+                    labelSize={ringLabel}
+                    labelColor={palette.text}
                   />
                 </View>
-              </Pressable>
-            ))}
-          </View>
+                <View style={styles.progressTextCol}>
+                  <Text
+                    style={{
+                      fontFamily: fontBold,
+                      fontSize: sectionTitle,
+                      lineHeight: Math.round(sectionTitle * 1.2),
+                      color: ringActive,
+                      marginBottom: 8,
+                    }}
+                  >
+                    Progresso{"\n"}diário
+                  </Text>
+                  <Text
+                    style={{
+                      fontFamily: fontRegular,
+                      fontSize: smallMeta,
+                      lineHeight: Math.round(smallMeta * 1.35),
+                      color: progressSubtitleColor,
+                    }}
+                  >
+                    {progressFraction.done} de {progressFraction.total} atividades
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.listGap}>
+                {activities.map((item) => (
+                  <Pressable
+                    key={item.id}
+                    testID={`home-activity-${item.id}`}
+                    onPress={() => handleActivityPress(item.id)}
+                    style={({ pressed }) => [
+                      styles.activityCard,
+                      {
+                        backgroundColor: cardBg,
+                        borderColor: cardBorder,
+                        opacity: pressed ? 0.92 : 1,
+                      },
+                    ]}
+                    accessibilityRole="button"
+                    accessibilityLabel={item.title}
+                  >
+                    <View style={styles.activityRow}>
+                      {item.done ? (
+                        <Ionicons
+                          name="checkmark-circle"
+                          size={Math.min(32, Math.max(22, Math.round(26 * scale)))}
+                          color={completedColor}
+                        />
+                      ) : (
+                        <View
+                          style={[
+                            styles.emptyCircle,
+                            { borderColor: isDefault ? "#B0BEC5" : palette.border },
+                          ]}
+                        />
+                      )}
+                      <View style={styles.activityTexts}>
+                        <Text
+                          style={{
+                            fontFamily: fontBold,
+                            fontSize: bodySize,
+                            color: item.done ? completedColor : palette.text,
+                            textDecorationLine: item.done ? "line-through" : "none",
+                          }}
+                        >
+                          {item.title}
+                        </Text>
+                        <Text
+                          style={{
+                            fontFamily: fontRegular,
+                            fontSize: smallMeta,
+                            color: palette.textMuted,
+                            marginTop: 4,
+                          }}
+                        >
+                          {item.subtitle}
+                        </Text>
+                      </View>
+                      <Ionicons
+                        name="chevron-forward"
+                        size={22}
+                        color={chevronColor}
+                      />
+                    </View>
+                  </Pressable>
+                ))}
+              </View>
+            </>
+          )}
         </ScrollView>
           </>
         ) : (
@@ -673,97 +665,14 @@ export function MainAppScreen({
           />
         )}
 
-        <View
-          style={[
-            styles.bottomDock,
-            {
-              paddingBottom: 12 + insets.bottom,
-              backgroundColor: palette.background,
-            },
-          ]}
-        >
-          <View style={styles.bottomInner}>
-            <View
-              style={[
-                styles.navPill,
-                {
-                  backgroundColor: navPillBg,
-                  borderWidth: isDefault ? 0 : 1,
-                  borderColor: palette.border,
-                },
-              ]}
-            >
-              <Pressable
-                onPress={handleOpenHomeTab}
-                style={styles.navItem}
-                accessibilityRole="button"
-                accessibilityLabel="Início"
-              >
-                <Ionicons
-                  name="home"
-                  size={24}
-                  color={mainTab === "home" ? ringActive : palette.textMuted}
-                />
-                <Text
-                  style={{
-                    fontFamily: mainTab === "home" ? fontBold : fontRegular,
-                    fontSize: bottomNavLabel,
-                    color: mainTab === "home" ? ringActive : palette.textMuted,
-                    marginTop: 4,
-                  }}
-                >
-                  Início
-                </Text>
-              </Pressable>
-              <Pressable
-                onPress={handleAgenda}
-                style={styles.navItem}
-                accessibilityRole="button"
-                accessibilityLabel="Agenda"
-              >
-                <Ionicons
-                  name="calendar-outline"
-                  size={24}
-                  color={mainTab === "agenda" ? ringActive : palette.textMuted}
-                />
-                <Text
-                  style={{
-                    fontFamily: mainTab === "agenda" ? fontBold : fontRegular,
-                    fontSize: bottomNavLabel,
-                    color: mainTab === "agenda" ? ringActive : palette.textMuted,
-                    marginTop: 4,
-                  }}
-                >
-                  Agenda
-                </Text>
-              </Pressable>
-            </View>
-
-            <Pressable
-              testID="home-add-task"
-              onPress={handleAddTask}
-              style={({ pressed }) => [
-                styles.addButton,
-                {
-                  backgroundColor: isDefault ? brandNavy : palette.primary,
-                  opacity: pressed ? 0.92 : 1,
-                },
-              ]}
-              accessibilityRole="button"
-              accessibilityLabel="Adicionar tarefa"
-            >
-              <Text
-                style={{
-                  fontFamily: fontBold,
-                  fontSize: addTaskSize,
-                  color: isDefault ? "#FFFFFF" : palette.onPrimary,
-                }}
-              >
-                Adicionar Tarefa
-              </Text>
-            </Pressable>
-          </View>
-        </View>
+        <BottomNavigation
+          activeTab={mainTab}
+          onTabPress={(tab) => {
+            if (tab === "home") handleOpenHomeTab();
+            else handleAgenda();
+          }}
+          onAddPress={handleAddTask}
+        />
         </SafeAreaView>
       )}
       {mainOverlay === "none" ? (
@@ -798,8 +707,22 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 16,
-    paddingBottom: 12,
+    paddingBottom: 24,
     gap: 10,
+  },
+  emptyContainer: {
+    paddingTop: 60,
+    paddingBottom: 40,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  emptyIconCircle: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 24,
   },
   iconCircle: {
     width: 44,
@@ -813,22 +736,32 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 2,
   },
-  profilePill: {
+  profileContainer: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    borderRadius: 999,
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    gap: 10,
-    minHeight: 48,
   },
   avatarCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: "center",
     justifyContent: "center",
+    zIndex: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  nameCapsule: {
+    height: 34,
+    borderRadius: 17,
+    justifyContent: "center",
+    paddingLeft: 22,
+    paddingRight: 16,
+    marginLeft: -14,
+    zIndex: 1,
   },
   pressed: {
     opacity: 0.88,
@@ -840,6 +773,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   titleBlock: {
+    marginTop: 10,
     marginBottom: 20,
   },
   progressCard: {

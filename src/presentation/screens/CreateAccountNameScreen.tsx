@@ -123,7 +123,7 @@ export function CreateAccountNameScreen({
       testID="sign-up-step-1-screen"
       style={[styles.screenRoot, { backgroundColor: topBg }]}
     >
-      <SafeAreaView style={styles.safe} edges={["left", "right", "bottom"]}>
+      <SafeAreaView style={styles.safe} edges={["left", "right"]}>
         <StatusBar style={isDefault ? "dark" : "light"} />
         <View style={[styles.topSection, { backgroundColor: topBg }]}>
           <View
@@ -300,7 +300,7 @@ const styles = StyleSheet.create({
   },
   topSection: {
     paddingHorizontal: 28,
-    paddingBottom: 12,
+    paddingBottom: 28,
   },
   topBar: {
     flexDirection: "row",

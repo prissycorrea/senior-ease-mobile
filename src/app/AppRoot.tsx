@@ -12,6 +12,8 @@ import {
   firebaseSignIn,
   firebaseSignOut,
   firebaseSignUp,
+  firebaseUpdateProfile,
+  firebaseDeleteAccount,
 } from "../data/firebase/firebaseAuth";
 import {
   addFirestoreTask,
@@ -22,8 +24,6 @@ import {
 } from "../data/firebase/firebaseTasks";
 import { AsyncStorageSettingsRepository } from "../data/settings/AsyncStorageSettingsRepository";
 import {
-  DEMO_LOGIN_EMAIL,
-  DEMO_LOGIN_PASSWORD,
   DEMO_USER_DISPLAY_NAME,
   demoLoginHelpMessage,
   isDemoLoginValid,
@@ -44,6 +44,7 @@ import { CreateAccountPasswordScreen } from "../presentation/screens/CreateAccou
 import { FontSizeOnboardingScreen } from "../presentation/screens/FontSizeOnboardingScreen";
 import { LoginEmailScreen } from "../presentation/screens/LoginEmailScreen";
 import { LoginPasswordScreen } from "../presentation/screens/LoginPasswordScreen";
+import { RegistrationSuccessScreen } from "../presentation/screens/RegistrationSuccessScreen";
 import {
   MainAppScreen,
   type MainAppRemoteTasks,
@@ -90,6 +91,7 @@ export function AppRoot(): ReactElement {
     useFirebaseAuth ? undefined : null,
   );
   const [remoteActivities, setRemoteActivities] = useState<HomeActivity[]>([]);
+  const [autoOpenCreateTask, setAutoOpenCreateTask] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -118,6 +120,7 @@ export function AppRoot(): ReactElement {
   useEffect(() => {
     if (!useFirebaseAuth || !authUser) return;
     return subscribeTasks(
+      authUser.uid,
       (list) => {
         setRemoteActivities(list);
       },
@@ -133,7 +136,9 @@ export function AppRoot(): ReactElement {
       authUser &&
       settings.visualOnboardingCompleted &&
       settings.fontSizeOnboardingCompleted &&
-      !settings.welcomeScreenCompleted
+      !settings.welcomeScreenCompleted &&
+      settings.registrationStep === 0 &&
+      settings.loginStep === 0
     ) {
       const name =
         authUser.displayName?.trim() ||
@@ -160,7 +165,9 @@ export function AppRoot(): ReactElement {
     return {
       activities: remoteActivities,
       createTask: async (_title, _subtitle, _scheduleDate, periodIso) => {
+        if (!authUser?.uid) return;
         await addFirestoreTask({
+          userId: authUser.uid,
           task: _title,
           period: periodIso,
           completed: false,
@@ -458,8 +465,7 @@ export function AppRoot(): ReactElement {
         const user = await firebaseSignUp(name, email, password);
         const displayName = user.displayName?.trim() || name;
         await persistSettings.execute({
-          welcomeScreenCompleted: true,
-          registrationStep: 0,
+          registrationStep: 4,
           registrationDraftFullName: "",
           registrationDraftEmail: "",
           loginStep: 0,
@@ -471,8 +477,7 @@ export function AppRoot(): ReactElement {
           prev
             ? {
                 ...prev,
-                welcomeScreenCompleted: true,
-                registrationStep: 0,
+                registrationStep: 4,
                 registrationDraftFullName: "",
                 registrationDraftEmail: "",
                 loginStep: 0,
@@ -492,8 +497,7 @@ export function AppRoot(): ReactElement {
       return;
     }
     await persistSettings.execute({
-      welcomeScreenCompleted: true,
-      registrationStep: 0,
+      registrationStep: 4,
       registrationDraftFullName: "",
       registrationDraftEmail: "",
       loginStep: 0,
@@ -505,8 +509,7 @@ export function AppRoot(): ReactElement {
       prev
         ? {
             ...prev,
-            welcomeScreenCompleted: true,
-            registrationStep: 0,
+            registrationStep: 4,
             registrationDraftFullName: "",
             registrationDraftEmail: "",
             loginStep: 0,
@@ -557,32 +560,7 @@ export function AppRoot(): ReactElement {
     );
   };
 
-  /** Volta da welcome para o passo de tamanho da letra. */
-  const handleBackToFontSizeStep = async () => {
-    await revertToFontStep.execute();
-    await persistSettings.execute({
-      registrationStep: 0,
-      registrationDraftFullName: "",
-      registrationDraftEmail: "",
-      loginStep: 0,
-      loginDraftEmail: "",
-      userDisplayName: "",
-    });
-    setSettings((prev) =>
-      prev
-        ? {
-            ...prev,
-            fontSizeOnboardingCompleted: false,
-            registrationStep: 0,
-            registrationDraftFullName: "",
-            registrationDraftEmail: "",
-            loginStep: 0,
-            loginDraftEmail: "",
-            userDisplayName: "",
-          }
-        : prev,
-    );
-  };
+
 
   /** Volta da tela principal para a welcome (mantém tema e fonte já escolhidos). */
   const handleBackFromMainAppToWelcome = async () => {
@@ -624,7 +602,31 @@ export function AppRoot(): ReactElement {
       prev ? { ...prev, fontScaleMultiplier: clamped } : prev,
     );
   };
+  const handleUpdateProfile = async (name: string, email: string) => {
+    if (useFirebaseAuth && authUser) {
+      await firebaseUpdateProfile(name, email);
+      const user = getFirebaseAuth().currentUser;
+      if (user) {
+        setAuthUser(user);
+        await persistSettings.execute({ userDisplayName: name });
+        setSettings((prev) => prev ? { ...prev, userDisplayName: name } : prev);
+      }
+    } else {
+      await persistSettings.execute({ userDisplayName: name });
+      setSettings((prev) => prev ? { ...prev, userDisplayName: name } : prev);
+    }
+  };
 
+  const handleDeleteAccount = async () => {
+    if (useFirebaseAuth && authUser) {
+      await firebaseDeleteAccount();
+      setAuthUser(null);
+      setRemoteActivities([]);
+    }
+    await revertToWelcomeStep.execute();
+    setSettings((prev) => (prev ? { ...prev, welcomeScreenCompleted: false } : prev));
+  };
+  
   const onboardingBody = (() => {
     if (!settings.visualOnboardingCompleted) {
       return (
@@ -644,7 +646,10 @@ export function AppRoot(): ReactElement {
         />
       );
     }
-    if (!settings.welcomeScreenCompleted) {
+    const shouldShowOnboarding =
+      !settings.welcomeScreenCompleted || (useFirebaseAuth && authUser === null);
+
+    if (shouldShowOnboarding) {
       if (settings.registrationStep === 1) {
         return (
           <CreateAccountNameScreen
@@ -671,6 +676,22 @@ export function AppRoot(): ReactElement {
           />
         );
       }
+      if (settings.registrationStep === 4) {
+        return (
+          <RegistrationSuccessScreen
+            onCreateTask={async () => {
+              setAutoOpenCreateTask(true);
+              await persistSettings.execute({ welcomeScreenCompleted: true, registrationStep: 0 });
+              setSettings((prev) => prev ? { ...prev, welcomeScreenCompleted: true, registrationStep: 0 } : prev);
+            }}
+            onSkip={async () => {
+              setAutoOpenCreateTask(false);
+              await persistSettings.execute({ welcomeScreenCompleted: true, registrationStep: 0 });
+              setSettings((prev) => prev ? { ...prev, welcomeScreenCompleted: true, registrationStep: 0 } : prev);
+            }}
+          />
+        );
+      }
       if (settings.loginStep === 1) {
         return (
           <LoginEmailScreen
@@ -693,7 +714,6 @@ export function AppRoot(): ReactElement {
         <WelcomeScreen
           onCreateAccount={handleCreateAccount}
           onAlreadyHaveAccount={handleAlreadyHaveAccount}
-          onBack={handleBackToFontSizeStep}
           onHelpPress={() => {
             Alert.alert(
               "Preciso de ajuda",
@@ -713,11 +733,15 @@ export function AppRoot(): ReactElement {
     return (
       <MainAppScreen
         userDisplayName={displayNameMain}
+        userEmail={useFirebaseAuth && authUser ? authUser.email || "" : ""}
         onBack={handleBackFromMainAppToWelcome}
         onLogout={handleBackFromMainAppToWelcome}
+        onUpdateProfile={handleUpdateProfile}
+        onDeleteAccount={handleDeleteAccount}
         onUpdateThemePreference={handleUpdateThemePreference}
         onUpdateFontScale={handleUpdateFontScaleFromSettings}
         remoteTasks={remoteTasksBridge}
+        autoLaunchTaskCreation={autoOpenCreateTask}
       />
     );
   })();

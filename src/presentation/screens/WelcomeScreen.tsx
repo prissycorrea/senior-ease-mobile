@@ -3,6 +3,7 @@ import {
   Lexend_700Bold,
   useFonts,
 } from "@expo-google-fonts/lexend";
+import { Unbounded_700Bold } from "@expo-google-fonts/unbounded";
 import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import * as SystemUI from "expo-system-ui";
@@ -32,6 +33,7 @@ import { useAppTheme } from "../theme/ThemeContext";
 
 const LEXEND_BOLD = "Lexend_700Bold";
 const LEXEND_REGULAR = "Lexend_400Regular";
+const UNBOUNDED_BOLD = "Unbounded_700Bold";
 
 const LOGO_BASE = 34;
 const BUTTON_LABEL_BASE = 17;
@@ -46,14 +48,12 @@ const BLUR_INTENSITY = 16;
 type Props = {
   onCreateAccount: () => Promise<void>;
   onAlreadyHaveAccount: () => Promise<void>;
-  onBack: () => Promise<void>;
   onHelpPress?: () => void;
 };
 
 export function WelcomeScreen({
   onCreateAccount,
   onAlreadyHaveAccount,
-  onBack,
   onHelpPress,
 }: Props): ReactElement {
   const insets = useSafeAreaInsets();
@@ -62,15 +62,15 @@ export function WelcomeScreen({
   const [fontsLoaded] = useFonts({
     Lexend_400Regular,
     Lexend_700Bold,
+    Unbounded_700Bold,
   });
   const [busy, setBusy] = useState(false);
-  const [backing, setBacking] = useState(false);
 
   const isDefault = preference === "default";
   const logoSeniorColor = isDefault ? brandNavy : "#FFFFFF";
   const logoEaseColor = isDefault ? accentBlue : highContrastActionBlue;
 
-  const logoSize = Math.min(48, Math.max(26, Math.round(LOGO_BASE * scale)));
+  const logoSize = 40; // Tamanho fixo para a logo
   const buttonLabelSize = Math.min(
     26,
     Math.max(14, Math.round(BUTTON_LABEL_BASE * scale)),
@@ -112,16 +112,6 @@ export function WelcomeScreen({
       setBusy(false);
     }
   }, [busy, onAlreadyHaveAccount]);
-
-  const handleBack = useCallback(async () => {
-    if (backing || busy) return;
-    setBacking(true);
-    try {
-      await onBack();
-    } finally {
-      setBacking(false);
-    }
-  }, [backing, busy, onBack]);
 
   if (!fontsLoaded) {
     return (
@@ -166,30 +156,7 @@ export function WelcomeScreen({
             { paddingTop: flowHeaderPaddingTop(insets.top) },
           ]}
         >
-          <View style={styles.topBar}>
-            <Pressable
-              testID="welcome-back-button"
-              onPress={handleBack}
-              disabled={backing || busy}
-              style={({ pressed }) => [
-                styles.backButton,
-                {
-                  backgroundColor: isDefault ? "#FFFFFF" : palette.surface,
-                  borderWidth: isDefault ? 0 : 2,
-                  borderColor: isDefault ? "transparent" : palette.border,
-                },
-                pressed && styles.pressed,
-              ]}
-              accessibilityRole="button"
-              accessibilityLabel="Voltar"
-            >
-              <Ionicons
-                name="chevron-back"
-                size={backIconSize}
-                color={backIconColor}
-              />
-            </Pressable>
-          </View>
+
           <View
             style={styles.logoBlock}
             accessibilityRole="header"
@@ -199,7 +166,7 @@ export function WelcomeScreen({
               style={[
                 styles.logoText,
                 {
-                  fontFamily: LEXEND_BOLD,
+                  fontFamily: UNBOUNDED_BOLD,
                   fontSize: logoSize,
                   lineHeight: logoSize * 1.08,
                   color: logoSeniorColor,
@@ -212,7 +179,7 @@ export function WelcomeScreen({
               style={[
                 styles.logoText,
                 {
-                  fontFamily: LEXEND_BOLD,
+                  fontFamily: UNBOUNDED_BOLD,
                   fontSize: logoSize,
                   lineHeight: logoSize * 1.08,
                   color: logoEaseColor,
@@ -391,6 +358,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "baseline",
     gap: 0,
+    marginTop: 140, // Empurra a logo para baixo
   },
   logoText: {
     letterSpacing: -0.8,

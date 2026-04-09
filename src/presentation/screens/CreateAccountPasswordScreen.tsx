@@ -66,6 +66,7 @@ export function CreateAccountPasswordScreen({
   const fontRegular = fontsLoaded ? LEXEND_REGULAR : undefined;
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
+  const [confirmTouched, setConfirmTouched] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [backing, setBacking] = useState(false);
@@ -135,13 +136,15 @@ export function CreateAccountPasswordScreen({
     secure: boolean,
     onToggleSecure: () => void,
     placeholder: string,
+    hasError: boolean = false,
+    onBlur?: () => void,
   ) => (
     <View
       style={[
         styles.inputShell,
         {
           backgroundColor: inputBg,
-          borderColor: inputBorder,
+          borderColor: hasError ? "#B91C1C" : inputBorder,
           minHeight: inputMinH,
           marginBottom: 14,
         },
@@ -168,6 +171,7 @@ export function CreateAccountPasswordScreen({
         secureTextEntry={secure}
         textContentType="newPassword"
         autoComplete="password-new"
+        onBlur={onBlur}
       />
       <Pressable
         testID={toggleTestID}
@@ -193,7 +197,7 @@ export function CreateAccountPasswordScreen({
       testID="sign-up-step-3-screen"
       style={[styles.screenRoot, { backgroundColor: topBg }]}
     >
-      <SafeAreaView style={styles.safe} edges={["left", "right", "bottom"]}>
+      <SafeAreaView style={styles.safe} edges={["left", "right"]}>
         <StatusBar style={isDefault ? "dark" : "light"} />
         <View style={[styles.topSection, { backgroundColor: topBg }]}>
           <View
@@ -303,10 +307,30 @@ export function CreateAccountPasswordScreen({
               "sign-up-password-confirm-input",
               "sign-up-password-toggle-confirm",
               confirm,
-              setConfirm,
+              (val) => {
+                setConfirm(val);
+                setConfirmTouched(false); // Esconde o erro enquanto o usuário ajusta
+              },
               !showConfirm,
               () => setShowConfirm((v) => !v),
               "Digite a senha novamente",
+              confirmTouched && confirm.length > 0 && password !== confirm,
+              () => setConfirmTouched(true),
+            )}
+
+            {confirmTouched && confirm.length > 0 && password !== confirm && (
+              <Text
+                style={{
+                  fontFamily: fontRegular,
+                  fontSize: Math.min(18, Math.max(12, Math.round(14 * scale))),
+                  color: "#B91C1C", // Vermelho de erro
+                  marginTop: -6,
+                  marginBottom: 12,
+                  paddingHorizontal: 16,
+                }}
+              >
+                As senhas precisam ser iguais.
+              </Text>
             )}
 
             <View
@@ -401,7 +425,7 @@ const styles = StyleSheet.create({
   },
   topSection: {
     paddingHorizontal: 28,
-    paddingBottom: 12,
+    paddingBottom: 28,
   },
   topBar: {
     flexDirection: "row",

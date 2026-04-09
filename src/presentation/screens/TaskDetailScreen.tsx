@@ -153,7 +153,7 @@ export function TaskDetailScreen({
   return (
     <Modal
       visible={open}
-      animationType="slide"
+      animationType="none"
       presentationStyle="fullScreen"
       onRequestClose={handleClose}
     >

@@ -1,7 +1,9 @@
 import {
   createUserWithEmailAndPassword,
+  deleteUser,
   signInWithEmailAndPassword,
   signOut,
+  updateEmail,
   updateProfile,
   type User,
 } from "firebase/auth";
@@ -22,6 +24,8 @@ export function firebaseAuthErrorMessage(code: string | undefined): string {
       return "Este e-mail já está cadastrado.";
     case "auth/weak-password":
       return "Escolha uma senha um pouco mais forte.";
+    case "auth/requires-recent-login":
+      return "Para sua segurança, faça o login novamente antes de alterar dados sensíveis ou excluir a conta.";
     case "auth/network-request-failed":
       return "Sem conexão. Verifique a internet e tente de novo.";
     default:
@@ -55,4 +59,37 @@ export async function firebaseSignUp(
 
 export async function firebaseSignOut(): Promise<void> {
   await signOut(getFirebaseAuth());
+}
+
+export async function firebaseUpdateProfile(displayName: string, emailStr: string): Promise<User> {
+  const auth = getFirebaseAuth();
+  const user = auth.currentUser;
+  if (!user) throw new Error("auth/user-not-found");
+
+  const newName = displayName.trim() || "Usuário";
+  const newEmail = emailStr.trim();
+
+  let changed = false;
+  if (newName !== user.displayName) {
+    await updateProfile(user, { displayName: newName });
+    changed = true;
+  }
+  
+  if (newEmail !== "" && newEmail !== user.email) {
+    await updateEmail(user, newEmail);
+    changed = true;
+  }
+
+  if (changed) {
+    await user.reload();
+  }
+  return auth.currentUser!;
+}
+
+export async function firebaseDeleteAccount(): Promise<void> {
+  const auth = getFirebaseAuth();
+  const user = auth.currentUser;
+  if (!user) throw new Error("auth/user-not-found");
+  
+  await deleteUser(user);
 }
