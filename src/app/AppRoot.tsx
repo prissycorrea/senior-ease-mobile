@@ -15,19 +15,11 @@ import {
   firebaseUpdateProfile,
   firebaseDeleteAccount,
 } from "../data/firebase/firebaseAuth";
-import {
-  addFirestoreTask,
-  deleteFirestoreTask,
-  setFirestoreTaskCompleted,
-  subscribeTasks,
-  updateFirestoreTaskFromHomeActivity,
-} from "../data/firebase/firebaseTasks";
+import { addFirestoreTask, deleteFirestoreTask, setFirestoreTaskCompleted, subscribeTasks, updateFirestoreTaskFromHomeActivity } from "../data/firebase/firebaseTasks";
 import { AsyncStorageSettingsRepository } from "../data/settings/AsyncStorageSettingsRepository";
-import {
-  DEMO_USER_DISPLAY_NAME,
-  demoLoginHelpMessage,
-  isDemoLoginValid,
-} from "../domain/constants/demoLoginCredentials";
+import { DelegatingSettingsRepository } from "../data/settings/DelegatingSettingsRepository";
+import { FirestoreSettingsRepository } from "../data/settings/FirestoreSettingsRepository";
+import { DEMO_USER_DISPLAY_NAME, demoLoginHelpMessage, isDemoLoginValid } from "../domain/constants/demoLoginCredentials";
 import type { AppSettings } from "../domain/entities/AppSettings";
 import { clampFontScale } from "../domain/entities/fontScale";
 import type { ThemePreference } from "../domain/entities/ThemePreference";
@@ -58,6 +50,7 @@ import { brandNavy } from "../presentation/theme/themePalette";
 
 export function AppRoot(): ReactElement {
   const {
+    settingsRepository,
     getBootstrap,
     persistSettings,
     submitVisualStep,
@@ -66,23 +59,19 @@ export function AppRoot(): ReactElement {
     revertToFontStep,
     revertToWelcomeStep,
   } = useMemo(() => {
-    const settingsRepository = new AsyncStorageSettingsRepository();
+    const local = new AsyncStorageSettingsRepository();
+    const delegator = new DelegatingSettingsRepository(local);
     return {
-      getBootstrap: new GetBootstrapStateUseCase(settingsRepository),
-      persistSettings: new PersistSettingsUseCase(settingsRepository),
-      submitVisualStep: new SubmitVisualComfortOnboardingUseCase(
-        settingsRepository,
-      ),
-      completeFontStep: new CompleteFontSizeOnboardingUseCase(
-        settingsRepository,
-      ),
+      settingsRepository: delegator,
+      getBootstrap: new GetBootstrapStateUseCase(delegator),
+      persistSettings: new PersistSettingsUseCase(delegator),
+      submitVisualStep: new SubmitVisualComfortOnboardingUseCase(delegator),
+      completeFontStep: new CompleteFontSizeOnboardingUseCase(delegator),
       revertToVisualStep: new RevertToVisualComfortOnboardingUseCase(
-        settingsRepository,
+        delegator,
       ),
-      revertToFontStep: new RevertToFontSizeOnboardingUseCase(
-        settingsRepository,
-      ),
-      revertToWelcomeStep: new RevertToWelcomeScreenUseCase(settingsRepository),
+      revertToFontStep: new RevertToFontSizeOnboardingUseCase(delegator),
+      revertToWelcomeStep: new RevertToWelcomeScreenUseCase(delegator),
     };
   }, []);
 
@@ -116,6 +105,24 @@ export function AppRoot(): ReactElement {
     });
     return unsub;
   }, []);
+
+  useEffect(() => {
+    if (!useFirebaseAuth || authUser === undefined) return;
+
+    if (authUser) {
+      const remote = new FirestoreSettingsRepository(authUser.uid);
+      settingsRepository.setDelegate(remote);
+
+      const unsubscribe = remote.subscribe(authUser.uid, (patch) => {
+        setSettings((prev) => (prev ? { ...prev, ...patch } : prev));
+      });
+
+      return unsubscribe;
+    } else {
+      const local = new AsyncStorageSettingsRepository();
+      settingsRepository.setDelegate(local);
+    }
+  }, [authUser, settingsRepository]);
 
   useEffect(() => {
     if (!useFirebaseAuth || !authUser) return;
