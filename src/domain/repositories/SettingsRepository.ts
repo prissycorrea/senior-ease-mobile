@@ -22,6 +22,7 @@ export type SettingsPatch = Partial<
 export interface SettingsRepository {
   load(): Promise<AppSettings>;
   save(patch: SettingsPatch): Promise<void>;
+  subscribe?(userId: string, onUpdate: (patch: SettingsPatch) => void): (() => void) | undefined;
 }
 
 export type { ThemePreference };
